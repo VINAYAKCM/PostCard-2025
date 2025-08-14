@@ -219,13 +219,28 @@
   display: flex;
   height: 100%;
   padding: 30px;
+  position: relative;
+}
+
+.front-side .postcard-content::after {
+  content: '';
+  position: absolute;
+  left: 60%; /* Position at the 60% mark to match left column width */
+  top: 40px; /* Don't start from the very top */
+  bottom: 40px; /* Don't extend to the very bottom */
+  width: 1px; /* Thinner line */
+  background-color: rgba(225, 229, 233, 0.6); /* More transparent */
+  z-index: 1;
 }
 
 .left-content {
-  flex: 1;
+  flex: 0 0 60%; /* Fixed width for left column */
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding-right: 30px;
+  overflow: hidden;
+  max-width: 60%; /* Ensure it doesn't exceed 60% of container */
 }
 
 .greeting {
@@ -242,6 +257,12 @@
   color: #555;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  max-width: 100%; /* Ensure message doesn't exceed container width */
+  overflow: hidden; /* Prevent text from overflowing */
+  white-space: pre-wrap; /* Preserve line breaks */
+  /* Ensure text doesn't exceed the left column width */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .closing {
@@ -255,12 +276,13 @@
 }
 
 .right-content {
-  width: 120px;
+  flex: 0 0 40%; /* Fixed width for right column */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
   padding-top: 20px;
+  padding-left: 30px;
 }
 
 .stamp-placeholder {
@@ -279,12 +301,11 @@
 .stamp-preview {
   width: 80px;
   height: 80px;
-  border: 2px dashed #cbd5e0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: transparent;
 }
 
 .stamp-image {

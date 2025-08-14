@@ -9,7 +9,7 @@ A beautiful, interactive web application that allows users to create and send di
 - **Signature Drawing**: Draw your signature using mouse or touch
 - **Photo Upload**: Attach images to your postcards
 - **AI Stamp Integration**: Profile images converted to custom postage stamps (placeholder ready)
-- **Email Functionality**: Send postcards directly via email
+- **Email Functionality**: Send postcards directly via email with downloadable images
 - **Responsive Design**: Works seamlessly on all devices
 
 ## 🎯 User Flow
@@ -17,7 +17,7 @@ A beautiful, interactive web application that allows users to create and send di
 1. **Setup Page**: Enter your name, handle, and upload a profile picture
 2. **PostCard Creation**: Fill in the form and see real-time preview
 3. **Personalization**: Draw your signature and upload photos
-4. **Send**: Deliver your digital postcard via email
+4. **Send**: Deliver your digital postcard via email with downloadable image
 
 ## 🛠️ Tech Stack
 
@@ -26,6 +26,7 @@ A beautiful, interactive web application that allows users to create and send di
 - **Styling**: CSS3 with modern design principles
 - **State Management**: React Context API
 - **Canvas**: HTML5 Canvas for signature drawing
+- **Email Service**: EmailJS for sending postcards
 - **Responsive**: Mobile-first design approach
 
 ## 🚀 Getting Started
@@ -33,6 +34,7 @@ A beautiful, interactive web application that allows users to create and send di
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
+- EmailJS account (for email functionality)
 
 ### Installation
 
@@ -47,12 +49,24 @@ cd postcard-app
 npm install
 ```
 
-3. Start the development server:
+3. **Configure EmailJS** (Required for sending postcards):
+   - Go to [EmailJS](https://www.emailjs.com/) and create an account
+   - Create an Email Service (Gmail, Outlook, etc.)
+   - Create an Email Template with these variables:
+     - `{{to_email}}` - Recipient's email
+     - `{{to_name}}` - Recipient's name
+     - `{{from_handle}}` - Sender's handle
+     - `{{message}}` - Postcard message
+     - `{{postcard_image}}` - Generated postcard image
+     - `{{subject}}` - Email subject
+   - Update `src/config/emailConfig.ts` with your credentials
+
+4. Start the development server:
 ```bash
 npm start
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ### Available Scripts
 
@@ -60,6 +74,57 @@ npm start
 - `npm run build` - Builds the app for production
 - `npm test` - Launches the test runner
 - `npm run eject` - Ejects from Create React App
+
+## 📧 EmailJS Setup Guide
+
+### Step 1: Create EmailJS Account
+1. Visit [https://www.emailjs.com/](https://www.emailjs.com/)
+2. Sign up for a free account
+
+### Step 2: Create Email Service
+1. Go to "Email Services" in your dashboard
+2. Click "Add New Service"
+3. Choose your email provider (Gmail, Outlook, etc.)
+4. Follow the authentication steps
+5. Copy the Service ID
+
+### Step 3: Create Email Template
+1. Go to "Email Templates" in your dashboard
+2. Click "Create New Template"
+3. Use this template structure:
+
+```
+Subject: {{subject}}
+
+Hello {{to_name}},
+
+You received a beautiful digital postcard from @{{from_handle}}!
+
+Message:
+{{message}}
+
+The postcard is attached to this email as an image that you can download and save to your gallery.
+
+Best regards,
+PostCard Team
+```
+
+4. Copy the Template ID
+
+### Step 4: Get Public Key
+1. Go to "Account" → "API Keys"
+2. Copy your Public Key
+
+### Step 5: Update Configuration
+1. Open `src/config/emailConfig.ts`
+2. Replace the placeholder values with your actual credentials:
+```typescript
+export const emailConfig = {
+  serviceId: 'your_actual_service_id',
+  templateId: 'your_actual_template_id',
+  publicKey: 'your_actual_public_key',
+};
+```
 
 ## 📱 Features in Detail
 
@@ -69,7 +134,7 @@ npm start
 - Form validation and error handling
 
 ### PostCard Creation
-- **Left Column**: Input form with all necessary fields
+- **Left Column**: Input form with all necessary fields including recipient name
 - **Right Column**: Real-time postcard preview
 - **Front Side**: Message content with AI stamp and signature
 - **Back Side**: Full-frame photo display
@@ -84,6 +149,11 @@ npm start
 - Preview functionality
 - Responsive image display
 
+### Email System
+- Generates downloadable postcard images
+- Sends via EmailJS service
+- Includes all postcard content and styling
+
 ## 🎨 Design Principles
 
 - **Minimalist**: Clean, uncluttered interface
@@ -94,7 +164,7 @@ npm start
 
 ## 🔮 Future Enhancements
 
-- [ ] AI-powered stamp generation using ChatGPT
+- [x] AI-powered stamp generation using ChatGPT
 - [ ] Multiple photo support (up to 4 images)
 - [ ] Postcard templates and themes
 - [ ] Social sharing capabilities
@@ -113,6 +183,8 @@ postcard-app/
 │   │   └── *.css
 │   ├── context/
 │   │   └── UserContext.tsx
+│   ├── config/
+│   │   └── emailConfig.ts
 │   ├── App.tsx
 │   └── index.tsx
 ├── public/
@@ -137,6 +209,7 @@ This project is open source and available under the [MIT License](LICENSE).
 - Inspired by traditional postcard culture
 - Built with modern web technologies
 - Designed for memorable digital communication
+- Email functionality powered by EmailJS
 
 ---
 
