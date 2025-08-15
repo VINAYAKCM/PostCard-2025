@@ -83,8 +83,8 @@ const PostCardPage: React.FC = () => {
 
     // Generate at 3x resolution for crisp quality
     const scale = 3;
-    canvas.width = 1146 * scale; // Front + back side by side
-    canvas.height = 405 * scale;
+    canvas.width = 1024 * scale; // Front + back side by side (512 * 2)
+    canvas.height = 347 * scale;
 
     // Enable high-quality rendering
     ctx.imageSmoothingEnabled = true;
@@ -101,7 +101,7 @@ const PostCardPage: React.FC = () => {
     await generateFrontSide(ctx, 0, 0, 1);
 
     // Generate Back Side (Right side - Photo)
-    await generateBackSide(ctx, 573, 0, 1);
+    await generateBackSide(ctx, 512, 0, 1);
 
     // Return high-quality PNG
     return canvas.toDataURL('image/png', 1.0);
@@ -121,8 +121,8 @@ const PostCardPage: React.FC = () => {
     ctx.strokeRect(xOffset + scale, yOffset + scale, width - 2 * scale, height - 2 * scale);
 
     // Set text properties for crisp rendering
-    ctx.font = `bold ${24 * scale}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillStyle = '#333';
+    ctx.font = `700 ${16 * scale}px 'Inter', Arial, sans-serif`; // Changed to 16px as specified
+    ctx.fillStyle = '#000'; // Black color as shown
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     
@@ -130,158 +130,141 @@ const PostCardPage: React.FC = () => {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // Add greeting
-    ctx.fillText(`Dear ${recipientName},`, xOffset + 30 * scale, yOffset + 50 * scale);
+    // Add greeting with exact positioning from Figma
+    ctx.fillText(`Dear ${recipientName ? `${recipientName},` : ','}`, xOffset + 10 * scale, yOffset + 20 * scale); // Changed to 10px from left
 
-    // Add message with word wrapping
-    ctx.font = `${16 * scale}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillStyle = '#555';
-    ctx.textBaseline = 'top';
-    
-    const maxWidth = 300 * scale;
-    const lineHeight = 22 * scale;
-    const words = message.split(' ');
-    let line = '';
-    let y = yOffset + 100 * scale;
-    
-    for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i] + ' ';
-      const metrics = ctx.measureText(testLine);
+    // Add message with word wrapping (only if message exists)
+    if (message && message.trim()) {
+      ctx.font = `${16 * scale}px 'Inter', Arial, sans-serif`;
+      ctx.fillStyle = '#555';
+      ctx.textBaseline = 'top';
       
-      if (metrics.width > maxWidth && i > 0) {
-        ctx.fillText(line, xOffset + 30 * scale, y);
-        line = words[i] + ' ';
-        y += lineHeight;
-      } else {
-        line = testLine;
+      const maxWidth = 300 * scale;
+      const lineHeight = 22 * scale;
+      const words = message.split(' ');
+      let line = '';
+      let y = yOffset + 60 * scale; // Positioned below greeting
+      
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = ctx.measureText(testLine);
+        
+        if (metrics.width > maxWidth && i > 0) {
+          ctx.fillText(line, xOffset + 10 * scale, y); // Changed to 10px to match CSS
+          line = words[i] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
       }
+      ctx.fillText(line, xOffset + 10 * scale, y); // Changed to 10px to match CSS
     }
-    ctx.fillText(line, xOffset + 30 * scale, y);
 
-    // Add closing
-    ctx.font = `${18 * scale}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillStyle = '#333';
-    ctx.fillText('Sincerely,', xOffset + 30 * scale, yOffset + 280 * scale);
-    ctx.fillText(`👤 @${handle}`, xOffset + 30 * scale, yOffset + 310 * scale);
+    // Add closing with exact positioning from Figma
+    ctx.font = `${18 * scale}px 'Inter', Arial, sans-serif`;
+    ctx.fillStyle = '#000'; // Black color as shown
+    ctx.fillText('Sincerely,', xOffset + 10 * scale, yOffset + 327 * scale); // Changed to 10px to match CSS
+    
+    // Add profile image or fallback icon
+    if (userData?.profileImage) {
+      // Draw profile image as 17x17 circle
+      const profileImg = new Image();
+      profileImg.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        const profileX = xOffset + 10 * scale + ctx.measureText('Sincerely, ').width + 5 * scale; // Changed to 10px
+        const profileY = yOffset + 327 * scale - 17 * scale; // Align with text baseline
+        const radius = 8.5 * scale; // 17/2 = 8.5
+        
+        ctx.arc(profileX + radius, profileY + radius, radius, 0, 2 * Math.PI);
+        ctx.clip();
+        
+        // Calculate dimensions to maintain aspect ratio
+        const profileAspectRatio = profileImg.width / profileImg.height;
+        let profileWidth, profileHeight;
+        
+        if (profileAspectRatio > 1) {
+          profileWidth = 17 * scale;
+          profileHeight = (17 * scale) / profileAspectRatio;
+        } else {
+          profileHeight = 17 * scale;
+          profileWidth = (17 * scale) * profileAspectRatio;
+        }
+        
+        const profileDrawX = profileX + (17 * scale - profileWidth) / 2;
+        const profileDrawY = profileY + (17 * scale - profileHeight) / 2;
+        
+        ctx.drawImage(profileImg, profileDrawX, profileDrawY, profileWidth, profileHeight);
+        ctx.restore();
+        
+        // Add handle text after profile image
+        ctx.fillText(`@${handle}`, profileX + 17 * scale + 5 * scale, yOffset + 327 * scale);
+      };
+      profileImg.src = userData.profileImage;
+    } else {
+      // Fallback to icon and handle
+      ctx.fillText(`👤 @${handle}`, xOffset + 10 * scale, yOffset + 347 * scale); // Changed to 10px
+    }
 
     // Add AI Stamp in the right column area (matching preview layout)
-    const stampSize = 80 * scale;
-    const stampX = xOffset + 400 * scale; // Position in right column
-    const stampY = yOffset + 50 * scale;
+    const stampSize = 80 * scale; // Updated dimensions: 80x80
+    const stampX = xOffset + 400 * scale; // Positioned for right column visibility (was 433, too far right)
+    const stampY = yOffset + 12 * scale; // Changed from 17px to 12px from top
+
+    // Draw stamp as a square profile image with rotation (no background)
+    ctx.save();
+    ctx.translate(stampX + stampSize / 2, stampY + stampSize / 2);
+    ctx.rotate(5.44 * Math.PI / 180); // 5.44° rotation to the right
     
-    // Draw profile image in stamp (circular, no border or text)
+    // Add profile image to stamp with rounded square clipping (no background)
     if (userData?.profileImage) {
       const profileImg = new Image();
-      return new Promise((resolve) => {
-        profileImg.onload = () => {
-          // Draw profile image in stamp (circular, maintaining aspect ratio)
-          ctx.save();
-          ctx.beginPath();
-          const centerX = stampX + stampSize / 2;
-          const centerY = stampY + stampSize / 2;
-          const radius = (stampSize - 10 * scale) / 2; // Slightly smaller for clean look
-          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-          ctx.clip();
-          
-          // Calculate dimensions to maintain aspect ratio
-          const profileAspectRatio = profileImg.width / profileImg.height;
-          const stampAspectRatio = (radius * 2) / (radius * 2);
-          
-          let profileWidth, profileHeight;
-          
-          if (profileAspectRatio > stampAspectRatio) {
-            // Profile is wider - fit to width
-            profileWidth = radius * 2;
-            profileHeight = (radius * 2) / profileAspectRatio;
-          } else {
-            // Profile is taller - fit to height
-            profileHeight = radius * 2;
-            profileWidth = (radius * 2) * profileAspectRatio;
-          }
-          
-          // Center the profile image within the stamp
-          const profileX = centerX - profileWidth / 2;
-          const profileY = centerY - profileHeight / 2;
-          
-          ctx.drawImage(profileImg, profileX, profileY, profileWidth, profileHeight);
-          ctx.restore();
-          
-          // Add signature below the stamp (matching preview layout)
-          if (signature) {
-            const signatureImg = new Image();
-            signatureImg.onload = () => {
-              // Position signature below the stamp, maintaining aspect ratio
-              const signatureAspectRatio = signatureImg.width / signatureImg.height;
-              const maxSignatureWidth = 120 * scale;
-              const maxSignatureHeight = 60 * scale;
-              
-              let signatureWidth, signatureHeight;
-              
-              if (signatureAspectRatio > maxSignatureWidth / maxSignatureHeight) {
-                // Signature is wider - fit to width
-                signatureWidth = maxSignatureWidth;
-                signatureHeight = maxSignatureWidth / signatureAspectRatio;
-              } else {
-                // Signature is taller - fit to height
-                signatureHeight = maxSignatureHeight;
-                signatureWidth = maxSignatureHeight * signatureAspectRatio;
-              }
-              
-              // Center the signature below the stamp
-              const signatureX = stampX + (maxSignatureWidth - signatureWidth) / 2;
-              const signatureY = stampY + stampSize + 30 * scale + (maxSignatureHeight - signatureHeight) / 2;
-              
-              ctx.drawImage(signatureImg, signatureX, signatureY, signatureWidth, signatureHeight);
-              resolve();
-            };
-            signatureImg.src = signature;
-          } else {
-            resolve();
-          }
-        };
-        profileImg.src = userData.profileImage!;
-      });
-    } else {
-      // Add signature if available (without profile image)
-      if (signature) {
-        const signatureImg = new Image();
-        return new Promise((resolve) => {
-          signatureImg.onload = () => {
-            // Position signature below the stamp, maintaining aspect ratio
-            const signatureAspectRatio = signatureImg.width / signatureImg.height;
-            const maxSignatureWidth = 120 * scale;
-            const maxSignatureHeight = 60 * scale;
-            
-            let signatureWidth, signatureHeight;
-            
-            if (signatureAspectRatio > maxSignatureWidth / maxSignatureHeight) {
-              // Signature is wider - fit to width
-              signatureWidth = maxSignatureWidth;
-              signatureHeight = maxSignatureWidth / signatureAspectRatio;
-            } else {
-              // Signature is taller - fit to height
-              signatureHeight = maxSignatureHeight;
-              signatureWidth = maxSignatureHeight * signatureAspectRatio;
-            }
-            
-            // Center the signature below the stamp
-            const signatureX = stampX + (maxSignatureWidth - signatureWidth) / 2;
-            const signatureY = stampY + stampSize + 30 * scale + (maxSignatureHeight - signatureHeight) / 2;
-            
-            ctx.drawImage(signatureImg, signatureX, signatureY, signatureWidth, signatureHeight);
-            resolve();
-          };
-          signatureImg.src = signature;
-        });
-      }
-      // If no profile image and no signature, return resolved promise
-      return Promise.resolve();
+      profileImg.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        
+        // Create rounded square clip path for stamp - 8px rounded corners
+        const halfSize = stampSize / 2;
+        const radius = 8 * scale; // Changed from 4px to 8px rounded corners
+        
+        // Draw rounded rectangle path
+        ctx.moveTo(-halfSize + radius, -halfSize);
+        ctx.lineTo(halfSize - radius, -halfSize);
+        ctx.quadraticCurveTo(halfSize, -halfSize, halfSize, -halfSize + radius);
+        ctx.lineTo(halfSize, halfSize - radius);
+        ctx.quadraticCurveTo(halfSize, halfSize, halfSize - radius, halfSize);
+        ctx.lineTo(-halfSize + radius, halfSize);
+        ctx.quadraticCurveTo(-halfSize, halfSize, -halfSize, halfSize - radius);
+        ctx.lineTo(-halfSize, -halfSize + radius);
+        ctx.quadraticCurveTo(-halfSize, -halfSize, -halfSize + radius, -halfSize);
+        ctx.closePath();
+        ctx.clip();
+        
+        // Draw the profile image to fill the entire rounded square stamp area
+        ctx.drawImage(profileImg, -halfSize, -halfSize, stampSize, stampSize);
+        ctx.restore();
+      };
+      profileImg.src = userData.profileImage;
+    }
+    
+    ctx.restore();
+
+    // Add signature exactly 33px from vertical line
+    if (signature) {
+      const signatureImg = new Image();
+      signatureImg.onload = () => {
+        // Position signature exactly 33px from vertical line in right column
+        const signatureX = xOffset + 256 + 33 * scale; // 50% of 512px is 256px, plus 33px
+        const signatureY = yOffset + 327 * scale; // Aligned with "Sincerely," line
+        ctx.drawImage(signatureImg, signatureX, signatureY, 180 * scale, 90 * scale); // Updated to 180x90 to match preview
+      };
+      signatureImg.src = signature;
     }
   };
 
   const generateBackSide = async (ctx: CanvasRenderingContext2D, xOffset: number, yOffset: number, scale: number): Promise<void> => {
-    const width = 573 * scale;
-    const height = 405 * scale;
+    const width = 512 * scale;
+    const height = 347 * scale;
     
     // Fill background
     ctx.fillStyle = 'white';
@@ -291,6 +274,17 @@ const PostCardPage: React.FC = () => {
     ctx.strokeStyle = '#e1e5e9';
     ctx.lineWidth = 2 * scale;
     ctx.strokeRect(xOffset + scale, yOffset + scale, width - 2 * scale, height - 2 * scale);
+
+    // Draw vertical line separator (matching CSS preview)
+    ctx.strokeStyle = 'rgba(170, 170, 170, 0.16)'; // #AAAAAA with 16% opacity
+    ctx.lineWidth = 2 * scale; // 2px weight
+    const lineX = xOffset + (width / 2); // Center of postcard (50%)
+    const lineTop = yOffset + 23.5 * scale; // Top position for 300px line height
+    const lineBottom = yOffset + (height - 23.5 * scale); // Bottom position for 300px line height
+    ctx.beginPath();
+    ctx.moveTo(lineX, lineTop);
+    ctx.lineTo(lineX, lineBottom);
+    ctx.stroke();
 
     if (photo) {
       // Draw the uploaded photo on the back side
@@ -345,8 +339,8 @@ const PostCardPage: React.FC = () => {
 
     // Use 2x scale for email - high quality but reasonable file size
     const scale = 2;
-    canvas.width = 1146 * scale;
-    canvas.height = 405 * scale;
+    canvas.width = 1024 * scale; // Front + back side by side (512 * 2)
+    canvas.height = 347 * scale;
 
     // Enable high-quality rendering
     ctx.imageSmoothingEnabled = true;
@@ -363,7 +357,7 @@ const PostCardPage: React.FC = () => {
     await generateFrontSide(ctx, 0, 0, 1);
 
     // Generate Back Side (Right side - Photo)
-    await generateBackSide(ctx, 573, 0, 1);
+    await generateBackSide(ctx, 512, 0, 1);
 
     // Return as high-quality JPEG to reduce file size while maintaining quality
     return canvas.toDataURL('image/jpeg', 0.95);
@@ -608,10 +602,20 @@ const PostCardPage: React.FC = () => {
           <div className="postcard-frame front-side">
             <div className="postcard-content">
               <div className="left-content">
-                <div className="greeting">Dear {recipientName || 'Recipient'},</div>
-                <div className="message">{message || 'Your message will appear here...'}</div>
+                <div className="greeting">Dear {recipientName ? `${recipientName},` : ','}</div>
+                <div className="message">{message || ''}</div>
                 <div className="closing">
-                  Sincerely, <span className="user-icon">👤</span> @{handle || 'handle'}
+                  Sincerely, 
+                  {userData?.profileImage ? (
+                    <img 
+                      src={userData.profileImage} 
+                      alt="Profile" 
+                      className="closing-profile-image"
+                    />
+                  ) : (
+                    <span className="user-icon">👤</span>
+                  )}
+                  @{handle || 'handle'}
                 </div>
               </div>
               <div className="right-content">
@@ -624,12 +628,12 @@ const PostCardPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-                {signature && (
-                  <div className="signature-display">
-                    <img src={signature} alt="Signature" className="signature-image" />
-                  </div>
-                )}
               </div>
+              {signature && (
+                <div className="signature-display">
+                  <img src={signature} alt="Signature" className="signature-image" />
+                </div>
+              )}
             </div>
           </div>
 
