@@ -1,9 +1,10 @@
 import React, { useState, useRef, useContext } from 'react';
 import SignatureCanvas from './SignatureCanvas';
 import { UserContext } from '../context/UserContext';
-import { cloudinaryConfig } from '../config/cloudinaryConfig';
 import emailjs from '@emailjs/browser';
 import { emailConfig } from '../config/emailConfig';
+import { cloudinaryConfig } from '../config/cloudinaryConfig';
+import html2canvas from 'html2canvas';
 import './PostCardPage.css';
 
 const PostCardPage: React.FC = () => {
@@ -76,291 +77,167 @@ const PostCardPage: React.FC = () => {
   };
 
   const generatePostcardImage = async (): Promise<string> => {
-    // Create a high-quality combined postcard image (front + back sides)
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Could not get canvas context');
-
-    // Generate at 3x resolution for crisp quality
-    const scale = 3;
-    canvas.width = 1024 * scale; // Front + back side by side (512 * 2)
-    canvas.height = 347 * scale;
-
-    // Enable high-quality rendering
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    console.log('🔍 Capturing front and back postcards separately...');
     
-    // Set high DPI for crisp text
-    ctx.scale(scale, scale);
-
-    // Fill background
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
-
-    // Generate Front Side (Left side - Message)
-    await generateFrontSide(ctx, 0, 0, 1);
-
-    // Generate Back Side (Right side - Photo)
-    await generateBackSide(ctx, 512, 0, 1);
-
-    // Return high-quality PNG
-    return canvas.toDataURL('image/png', 1.0);
-  };
-
-  const generateFrontSide = async (ctx: CanvasRenderingContext2D, xOffset: number, yOffset: number, scale: number): Promise<void> => {
-    const width = 573 * scale;
-    const height = 405 * scale;
-    
-    // Fill background
-    ctx.fillStyle = 'white';
-    ctx.fillRect(xOffset, yOffset, width, height);
-
-    // Add border with rounded corners effect
-    ctx.strokeStyle = '#e1e5e9';
-    ctx.lineWidth = 2 * scale;
-    ctx.strokeRect(xOffset + scale, yOffset + scale, width - 2 * scale, height - 2 * scale);
-
-    // Set text properties for crisp rendering
-    ctx.font = `700 ${16 * scale}px 'Inter', Arial, sans-serif`; // Changed to 16px as specified
-    ctx.fillStyle = '#000'; // Black color as shown
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    
-    // Enable text anti-aliasing
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-
-    // Add greeting with exact positioning from Figma
-    ctx.fillText(`Dear ${recipientName ? `${recipientName},` : ','}`, xOffset + 10 * scale, yOffset + 20 * scale); // Changed to 10px from left
-
-    // Add message with word wrapping (only if message exists)
-    if (message && message.trim()) {
-      ctx.font = `${16 * scale}px 'Inter', Arial, sans-serif`;
-      ctx.fillStyle = '#555';
-      ctx.textBaseline = 'top';
-      
-      const maxWidth = 300 * scale;
-      const lineHeight = 22 * scale;
-      const words = message.split(' ');
-      let line = '';
-      let y = yOffset + 60 * scale; // Positioned below greeting
-      
-      for (let i = 0; i < words.length; i++) {
-        const testLine = line + words[i] + ' ';
-        const metrics = ctx.measureText(testLine);
-        
-        if (metrics.width > maxWidth && i > 0) {
-          ctx.fillText(line, xOffset + 10 * scale, y); // Changed to 10px to match CSS
-          line = words[i] + ' ';
-          y += lineHeight;
-        } else {
-          line = testLine;
-        }
-      }
-      ctx.fillText(line, xOffset + 10 * scale, y); // Changed to 10px to match CSS
-    }
-
-    // Add closing with exact positioning from Figma
-    ctx.font = `${18 * scale}px 'Inter', Arial, sans-serif`;
-    ctx.fillStyle = '#000'; // Black color as shown
-    ctx.fillText('Sincerely,', xOffset + 10 * scale, yOffset + 327 * scale); // Changed to 10px to match CSS
-    
-    // Add profile image or fallback icon
-    if (userData?.profileImage) {
-      // Draw profile image as 17x17 circle
-      const profileImg = new Image();
-      profileImg.onload = () => {
-        ctx.save();
-        ctx.beginPath();
-        const profileX = xOffset + 10 * scale + ctx.measureText('Sincerely, ').width + 5 * scale; // Changed to 10px
-        const profileY = yOffset + 327 * scale - 17 * scale; // Align with text baseline
-        const radius = 8.5 * scale; // 17/2 = 8.5
-        
-        ctx.arc(profileX + radius, profileY + radius, radius, 0, 2 * Math.PI);
-        ctx.clip();
-        
-        // Calculate dimensions to maintain aspect ratio
-        const profileAspectRatio = profileImg.width / profileImg.height;
-        let profileWidth, profileHeight;
-        
-        if (profileAspectRatio > 1) {
-          profileWidth = 17 * scale;
-          profileHeight = (17 * scale) / profileAspectRatio;
-        } else {
-          profileHeight = 17 * scale;
-          profileWidth = (17 * scale) * profileAspectRatio;
-        }
-        
-        const profileDrawX = profileX + (17 * scale - profileWidth) / 2;
-        const profileDrawY = profileY + (17 * scale - profileHeight) / 2;
-        
-        ctx.drawImage(profileImg, profileDrawX, profileDrawY, profileWidth, profileHeight);
-        ctx.restore();
-        
-        // Add handle text after profile image
-        ctx.fillText(`@${handle}`, profileX + 17 * scale + 5 * scale, yOffset + 327 * scale);
-      };
-      profileImg.src = userData.profileImage;
-    } else {
-      // Fallback to icon and handle
-      ctx.fillText(`👤 @${handle}`, xOffset + 10 * scale, yOffset + 347 * scale); // Changed to 10px
-    }
-
-    // Add AI Stamp in the right column area (matching preview layout)
-    const stampSize = 80 * scale; // Updated dimensions: 80x80
-    const stampX = xOffset + 400 * scale; // Positioned for right column visibility (was 433, too far right)
-    const stampY = yOffset + 12 * scale; // Changed from 17px to 12px from top
-
-    // Draw stamp as a square profile image with rotation (no background)
-    ctx.save();
-    ctx.translate(stampX + stampSize / 2, stampY + stampSize / 2);
-    ctx.rotate(5.44 * Math.PI / 180); // 5.44° rotation to the right
-    
-    // Add profile image to stamp with rounded square clipping (no background)
-    if (userData?.profileImage) {
-      const profileImg = new Image();
-      profileImg.onload = () => {
-        ctx.save();
-        ctx.beginPath();
-        
-        // Create rounded square clip path for stamp - 8px rounded corners
-        const halfSize = stampSize / 2;
-        const radius = 8 * scale; // Changed from 4px to 8px rounded corners
-        
-        // Draw rounded rectangle path
-        ctx.moveTo(-halfSize + radius, -halfSize);
-        ctx.lineTo(halfSize - radius, -halfSize);
-        ctx.quadraticCurveTo(halfSize, -halfSize, halfSize, -halfSize + radius);
-        ctx.lineTo(halfSize, halfSize - radius);
-        ctx.quadraticCurveTo(halfSize, halfSize, halfSize - radius, halfSize);
-        ctx.lineTo(-halfSize + radius, halfSize);
-        ctx.quadraticCurveTo(-halfSize, halfSize, -halfSize, halfSize - radius);
-        ctx.lineTo(-halfSize, -halfSize + radius);
-        ctx.quadraticCurveTo(-halfSize, -halfSize, -halfSize + radius, -halfSize);
-        ctx.closePath();
-        ctx.clip();
-        
-        // Draw the profile image to fill the entire rounded square stamp area
-        ctx.drawImage(profileImg, -halfSize, -halfSize, stampSize, stampSize);
-        ctx.restore();
-      };
-      profileImg.src = userData.profileImage;
+    // Capture front side postcard
+    const frontSide = document.querySelector('.front-side') as HTMLElement;
+    if (!frontSide) {
+      throw new Error('Front side not found');
     }
     
-    ctx.restore();
-
-    // Add signature exactly 33px from vertical line
-    if (signature) {
-      const signatureImg = new Image();
-      signatureImg.onload = () => {
-        // Position signature exactly 33px from vertical line in right column
-        const signatureX = xOffset + 256 + 33 * scale; // 50% of 512px is 256px, plus 33px
-        const signatureY = yOffset + 327 * scale; // Aligned with "Sincerely," line
-        ctx.drawImage(signatureImg, signatureX, signatureY, 180 * scale, 90 * scale); // Updated to 180x90 to match preview
-      };
-      signatureImg.src = signature;
+    // Capture back side postcard
+    const backSide = document.querySelector('.back-side') as HTMLElement;
+    if (!backSide) {
+      throw new Error('Back side not found');
     }
-  };
-
-  const generateBackSide = async (ctx: CanvasRenderingContext2D, xOffset: number, yOffset: number, scale: number): Promise<void> => {
-    const width = 512 * scale;
-    const height = 347 * scale;
     
-    // Fill background
-    ctx.fillStyle = 'white';
-    ctx.fillRect(xOffset, yOffset, width, height);
-
-    // Add border with rounded corners effect
-    ctx.strokeStyle = '#e1e5e9';
-    ctx.lineWidth = 2 * scale;
-    ctx.strokeRect(xOffset + scale, yOffset + scale, width - 2 * scale, height - 2 * scale);
-
-    // Draw vertical line separator (matching CSS preview)
-    ctx.strokeStyle = 'rgba(170, 170, 170, 0.16)'; // #AAAAAA with 16% opacity
-    ctx.lineWidth = 2 * scale; // 2px weight
-    const lineX = xOffset + (width / 2); // Center of postcard (50%)
-    const lineTop = yOffset + 23.5 * scale; // Top position for 300px line height
-    const lineBottom = yOffset + (height - 23.5 * scale); // Bottom position for 300px line height
-    ctx.beginPath();
-    ctx.moveTo(lineX, lineTop);
-    ctx.lineTo(lineX, lineBottom);
-    ctx.stroke();
-
-    if (photo) {
-      // Draw the uploaded photo on the back side
-      const photoImg = new Image();
-      return new Promise((resolve) => {
-        photoImg.onload = () => {
-          // Fill the entire postcard frame with the photo while maintaining aspect ratio
-          const padding = 0; // No padding - fill entire frame
-          const maxPhotoWidth = width - (padding * 2);
-          const maxPhotoHeight = height - (padding * 2);
-          
-          // Calculate aspect ratios
-          const photoAspectRatio = photoImg.width / photoImg.height;
-          const frameAspectRatio = maxPhotoWidth / maxPhotoHeight;
-          
-          let photoWidth, photoHeight;
-          
-          if (photoAspectRatio > frameAspectRatio) {
-            // Photo is wider than frame - fit to height and crop sides
-            photoHeight = maxPhotoHeight;
-            photoWidth = maxPhotoHeight * photoAspectRatio;
-          } else {
-            // Photo is taller than frame - fit to width and crop top/bottom
-            photoWidth = maxPhotoWidth;
-            photoHeight = maxPhotoWidth / photoAspectRatio;
-          }
-          
-          // Center the photo and crop to fill the entire frame
-          const photoX = xOffset + padding - (photoWidth - maxPhotoWidth) / 2;
-          const photoY = yOffset + padding - (photoHeight - maxPhotoHeight) / 2;
-          
-          ctx.drawImage(photoImg, photoX, photoY, photoWidth, photoHeight);
-          resolve();
-        };
-        photoImg.src = photo;
+    // Create a temporary container for the combined postcard
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.background = 'white';
+    tempContainer.style.display = 'flex';
+    tempContainer.style.flexDirection = 'column';
+    tempContainer.style.gap = '0';
+    
+    // Clone front side and maintain exact original dimensions
+    const frontClone = frontSide.cloneNode(true) as HTMLElement;
+    // Keep original dimensions - don't override them
+    frontClone.style.borderRadius = '20px 20px 0 0'; // Top corners only
+    frontClone.style.margin = '0';
+    frontClone.style.padding = '0';
+    // Ensure all child elements maintain their original sizing
+    const frontContent = frontClone.querySelector('.postcard-content') as HTMLElement;
+    if (frontContent) {
+      frontContent.style.width = '100%';
+      frontContent.style.height = '100%';
+    }
+    tempContainer.appendChild(frontClone);
+    
+    // Clone back side and maintain exact original dimensions
+    const backClone = backSide.cloneNode(true) as HTMLElement;
+    // Keep original dimensions - don't override them
+    backClone.style.borderRadius = '0 0 20px 20px'; // Bottom corners only
+    backClone.style.margin = '0';
+    backClone.style.padding = '0';
+    // Ensure photo maintains original dimensions
+    const photoContainer = backClone.querySelector('.photo-container') as HTMLElement;
+    if (photoContainer) {
+      photoContainer.style.width = '100%';
+      photoContainer.style.height = '100%';
+    }
+    const postcardPhoto = backClone.querySelector('.postcard-photo') as HTMLElement;
+    if (postcardPhoto) {
+      postcardPhoto.style.width = '100%';
+      postcardPhoto.style.height = '100%';
+      postcardPhoto.style.objectFit = 'cover';
+    }
+    tempContainer.appendChild(backClone);
+    
+    // Add to DOM temporarily
+    document.body.appendChild(tempContainer);
+    
+    try {
+      // Capture with html2canvas using natural dimensions
+      const canvas = await html2canvas(tempContainer, {
+        scale: 3, // High quality
+        backgroundColor: 'white',
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        width: undefined, // Let html2canvas determine natural width
+        height: undefined // Let html2canvas determine natural height
       });
-    } else {
-      // If no photo, add placeholder text
-      ctx.fillStyle = '#999';
-      ctx.font = `${16 * scale}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText('Photo will appear here', xOffset + width / 2, yOffset + height / 2);
-      ctx.textAlign = 'left';
+      
+      console.log('🔍 Front and back postcards captured and stacked successfully');
+      return canvas.toDataURL('image/png', 1.0);
+    } finally {
+      // Clean up
+      document.body.removeChild(tempContainer);
     }
   };
 
   const generateEmailFriendlyImage = async (): Promise<string> => {
-    // Create a smaller version specifically for email that fits within EmailJS limits
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Could not get canvas context');
-
-    // Use 2x scale for email - high quality but reasonable file size
-    const scale = 2;
-    canvas.width = 1024 * scale; // Front + back side by side (512 * 2)
-    canvas.height = 347 * scale;
-
-    // Enable high-quality rendering
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    console.log('🔍 Capturing front and back postcards separately for email...');
     
-    // Set high DPI for crisp text
-    ctx.scale(scale, scale);
-
-    // Fill background
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
-
-    // Generate Front Side (Left side - Message)
-    await generateFrontSide(ctx, 0, 0, 1);
-
-    // Generate Back Side (Right side - Photo)
-    await generateBackSide(ctx, 512, 0, 1);
-
-    // Return as high-quality JPEG to reduce file size while maintaining quality
-    return canvas.toDataURL('image/jpeg', 0.95);
+    // Capture front side postcard
+    const frontSide = document.querySelector('.front-side') as HTMLElement;
+    if (!frontSide) {
+      throw new Error('Front side not found');
+    }
+    
+    // Capture back side postcard
+    const backSide = document.querySelector('.back-side') as HTMLElement;
+    if (!backSide) {
+      throw new Error('Back side not found');
+    }
+    
+    // Create a temporary container for the combined postcard
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.background = 'white';
+    tempContainer.style.display = 'flex';
+    tempContainer.style.flexDirection = 'column';
+    tempContainer.style.gap = '0';
+    
+    // Clone front side and maintain exact original dimensions
+    const frontClone = frontSide.cloneNode(true) as HTMLElement;
+    // Keep original dimensions - don't override them
+    frontClone.style.borderRadius = '20px 20px 0 0'; // Top corners only
+    frontClone.style.margin = '0';
+    frontClone.style.padding = '0';
+    // Ensure all child elements maintain their original sizing
+    const frontContent = frontClone.querySelector('.postcard-content') as HTMLElement;
+    if (frontContent) {
+      frontContent.style.width = '100%';
+      frontContent.style.height = '100%';
+    }
+    tempContainer.appendChild(frontClone);
+    
+    // Clone back side and maintain exact original dimensions
+    const backClone = backSide.cloneNode(true) as HTMLElement;
+    // Keep original dimensions - don't override them
+    backClone.style.borderRadius = '0 0 20px 20px'; // Bottom corners only
+    backClone.style.margin = '0';
+    backClone.style.padding = '0';
+    // Ensure photo maintains original dimensions
+    const photoContainer = backClone.querySelector('.photo-container') as HTMLElement;
+    if (photoContainer) {
+      photoContainer.style.width = '100%';
+      photoContainer.style.height = '100%';
+    }
+    const postcardPhoto = backClone.querySelector('.postcard-photo') as HTMLElement;
+    if (postcardPhoto) {
+      postcardPhoto.style.width = '100%';
+      postcardPhoto.style.height = '100%';
+      postcardPhoto.style.objectFit = 'cover';
+    }
+    tempContainer.appendChild(backClone);
+    
+    // Add to DOM temporarily
+    document.body.appendChild(tempContainer);
+    
+    try {
+      // Capture with html2canvas using natural dimensions
+      const canvas = await html2canvas(tempContainer, {
+        scale: 2, // Good quality for email
+        backgroundColor: 'white',
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        width: undefined, // Let html2canvas determine natural width
+        height: undefined // Let html2canvas determine natural height
+      });
+      
+      console.log('🔍 Front and back postcards captured and stacked successfully for email');
+      return canvas.toDataURL('image/jpeg', 0.95);
+    } finally {
+      // Clean up
+      document.body.removeChild(tempContainer);
+    }
   };
 
   const sendPostcardEmail = async (postcardImage: string): Promise<void> => {
