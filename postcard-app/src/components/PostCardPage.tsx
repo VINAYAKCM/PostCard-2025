@@ -4,7 +4,8 @@ import { UserContext } from '../context/UserContext';
 import emailjs from '@emailjs/browser';
 import { emailConfig } from '../config/emailConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
-import html2canvas from 'html2canvas';
+// REMOVED: dom-to-image import - now using Canvas API with Figma specs
+
 import './PostCardPage.css';
 
 const PostCardPage: React.FC = () => {
@@ -76,169 +77,199 @@ const PostCardPage: React.FC = () => {
     }
   };
 
+  // BACKEND API SOLUTION: Perfect quality via Puppeteer backend
   const generatePostcardImage = async (): Promise<string> => {
-    console.log('🔍 Capturing front and back postcards separately...');
-    
-    // Capture front side postcard
-    const frontSide = document.querySelector('.front-side') as HTMLElement;
-    if (!frontSide) {
-      throw new Error('Front side not found');
-    }
-    
-    // Capture back side postcard
-    const backSide = document.querySelector('.back-side') as HTMLElement;
-    if (!backSide) {
-      throw new Error('Back side not found');
-    }
-    
-    // Create a temporary container for the combined postcard
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.top = '-9999px';
-    tempContainer.style.background = 'white';
-    tempContainer.style.display = 'flex';
-    tempContainer.style.flexDirection = 'column';
-    tempContainer.style.gap = '0';
-    
-    // Clone front side and maintain exact original dimensions
-    const frontClone = frontSide.cloneNode(true) as HTMLElement;
-    // Keep original dimensions - don't override them
-    frontClone.style.borderRadius = '20px 20px 0 0'; // Top corners only
-    frontClone.style.margin = '0';
-    frontClone.style.padding = '0';
-    // Ensure all child elements maintain their original sizing
-    const frontContent = frontClone.querySelector('.postcard-content') as HTMLElement;
-    if (frontContent) {
-      frontContent.style.width = '100%';
-      frontContent.style.height = '100%';
-    }
-    tempContainer.appendChild(frontClone);
-    
-    // Clone back side and maintain exact original dimensions
-    const backClone = backSide.cloneNode(true) as HTMLElement;
-    // Keep original dimensions - don't override them
-    backClone.style.borderRadius = '0 0 20px 20px'; // Bottom corners only
-    backClone.style.margin = '0';
-    backClone.style.padding = '0';
-    // Ensure photo maintains original dimensions
-    const photoContainer = backClone.querySelector('.photo-container') as HTMLElement;
-    if (photoContainer) {
-      photoContainer.style.width = '100%';
-      photoContainer.style.height = '100%';
-    }
-    const postcardPhoto = backClone.querySelector('.postcard-photo') as HTMLElement;
-    if (postcardPhoto) {
-      postcardPhoto.style.width = '100%';
-      postcardPhoto.style.height = '100%';
-      postcardPhoto.style.objectFit = 'cover';
-    }
-    tempContainer.appendChild(backClone);
-    
-    // Add to DOM temporarily
-    document.body.appendChild(tempContainer);
+    console.log('🚀 [DOWNLOAD] Generating postcard via backend API...');
     
     try {
-      // Capture with html2canvas using natural dimensions
-      const canvas = await html2canvas(tempContainer, {
-        scale: 3, // High quality
-        backgroundColor: 'white',
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-        width: undefined, // Let html2canvas determine natural width
-        height: undefined // Let html2canvas determine natural height
+      // Step 1: Create perfect HTML for the postcard
+      const postcardHTML = createPerfectPostcardHTML();
+      
+      // Step 2: Send to backend for perfect rendering
+      const response = await fetch('http://localhost:3002/api/generate-postcard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          htmlContent: postcardHTML,
+          width: 1024, // 2x resolution
+          height: 1388, // 2x resolution
+          format: 'png',
+          quality: 100
+        })
       });
       
-      console.log('🔍 Front and back postcards captured and stacked successfully');
-      return canvas.toDataURL('image/png', 1.0);
-    } finally {
-      // Clean up
-      document.body.removeChild(tempContainer);
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+      
+      // Step 3: Convert response to data URL
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      
+      console.log('✅ [DOWNLOAD] Perfect postcard generated via backend API');
+      return imageUrl;
+      
+    } catch (error) {
+      console.error('❌ [DOWNLOAD] Error generating postcard:', error);
+      throw error;
     }
   };
 
   const generateEmailFriendlyImage = async (): Promise<string> => {
-    console.log('🔍 Capturing front and back postcards separately for email...');
-    
-    // Capture front side postcard
-    const frontSide = document.querySelector('.front-side') as HTMLElement;
-    if (!frontSide) {
-      throw new Error('Front side not found');
-    }
-    
-    // Capture back side postcard
-    const backSide = document.querySelector('.back-side') as HTMLElement;
-    if (!backSide) {
-      throw new Error('Back side not found');
-    }
-    
-    // Create a temporary container for the combined postcard
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.top = '-9999px';
-    tempContainer.style.background = 'white';
-    tempContainer.style.display = 'flex';
-    tempContainer.style.flexDirection = 'column';
-    tempContainer.style.gap = '0';
-    
-    // Clone front side and maintain exact original dimensions
-    const frontClone = frontSide.cloneNode(true) as HTMLElement;
-    // Keep original dimensions - don't override them
-    frontClone.style.borderRadius = '20px 20px 0 0'; // Top corners only
-    frontClone.style.margin = '0';
-    frontClone.style.padding = '0';
-    // Ensure all child elements maintain their original sizing
-    const frontContent = frontClone.querySelector('.postcard-content') as HTMLElement;
-    if (frontContent) {
-      frontContent.style.width = '100%';
-      frontContent.style.height = '100%';
-    }
-    tempContainer.appendChild(frontClone);
-    
-    // Clone back side and maintain exact original dimensions
-    const backClone = backSide.cloneNode(true) as HTMLElement;
-    // Keep original dimensions - don't override them
-    backClone.style.borderRadius = '0 0 20px 20px'; // Bottom corners only
-    backClone.style.margin = '0';
-    backClone.style.padding = '0';
-    // Ensure photo maintains original dimensions
-    const photoContainer = backClone.querySelector('.photo-container') as HTMLElement;
-    if (photoContainer) {
-      photoContainer.style.width = '100%';
-      photoContainer.style.height = '100%';
-    }
-    const postcardPhoto = backClone.querySelector('.postcard-photo') as HTMLElement;
-    if (postcardPhoto) {
-      postcardPhoto.style.width = '100%';
-      postcardPhoto.style.height = '100%';
-      postcardPhoto.style.objectFit = 'cover';
-    }
-    tempContainer.appendChild(backClone);
-    
-    // Add to DOM temporarily
-    document.body.appendChild(tempContainer);
+    console.log('🚀 [EMAIL] Generating email postcard via backend API...');
     
     try {
-      // Capture with html2canvas using natural dimensions
-      const canvas = await html2canvas(tempContainer, {
-        scale: 2, // Good quality for email
-        backgroundColor: 'white',
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-        width: undefined, // Let html2canvas determine natural width
-        height: undefined // Let html2canvas determine natural height
+      // Step 1: Create perfect HTML for the postcard
+      const postcardHTML = createPerfectPostcardHTML();
+      
+      // Step 2: Send to backend for perfect rendering
+      const response = await fetch('http://localhost:3002/api/generate-postcard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          htmlContent: postcardHTML,
+          width: 768, // 1.5x resolution for email
+          height: 1041, // 1.5x resolution for email
+          format: 'jpeg',
+          quality: 95
+        })
       });
       
-      console.log('🔍 Front and back postcards captured and stacked successfully for email');
-      return canvas.toDataURL('image/jpeg', 0.95);
-    } finally {
-      // Clean up
-      document.body.removeChild(tempContainer);
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+      
+      // Step 3: Convert response to data URL
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      
+      console.log('✅ [EMAIL] Perfect postcard generated via backend API');
+      return imageUrl;
+      
+    } catch (error) {
+      console.error('❌ [EMAIL] Error generating postcard:', error);
+      throw error;
     }
   };
+
+  // Create perfect HTML for the postcard
+  const createPerfectPostcardHTML = (): string => {
+    // Get all the CSS from your stylesheet
+    const allStyles = Array.from(document.styleSheets)
+      .map(sheet => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n');
+        } catch (e) {
+          return '';
+        }
+      })
+      .join('\n');
+    
+    // Get the actual content from your postcard preview
+    const frontSideElement = document.querySelector('.front-side');
+    const backSideElement = document.querySelector('.back-side');
+    
+    if (!frontSideElement || !backSideElement) {
+      throw new Error('Postcard preview elements not found');
+    }
+    
+    // Clone the elements to get their current state
+    const frontSideClone = frontSideElement.cloneNode(true) as HTMLElement;
+    const backSideClone = backSideElement.cloneNode(true) as HTMLElement;
+    
+    // Ensure all images are loaded
+    const frontImages = Array.from(frontSideClone.querySelectorAll('img'));
+    const backImages = Array.from(backSideClone.querySelectorAll('img'));
+    const allImages = [...frontImages, ...backImages];
+    allImages.forEach(img => {
+      if (img.src && !img.src.startsWith('data:')) {
+        img.src = img.src; // Force reload
+      }
+    });
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>PostCard</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Inter', sans-serif;
+              background: #f0f0f0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+            }
+            
+            .postcard-container {
+              width: 512px;
+              height: 694px;
+              background: linear-gradient(to bottom, #FFFFFF 0%, #FFEBD4 100%);
+              border-radius: 20px;
+              box-shadow: 4px 4px 18px rgba(0, 0, 0, 0.25);
+              overflow: hidden;
+              position: relative;
+            }
+            
+            .front-side {
+              width: 100%;
+              height: 347px;
+              position: relative;
+              background: transparent;
+            }
+            
+            .back-side {
+              width: 100%;
+              height: 347px;
+              position: relative;
+              background: #FFFFFF;
+            }
+            
+            /* All your CSS styles */
+            ${allStyles}
+          </style>
+        </head>
+        <body>
+          <div class="postcard-container">
+            <div class="front-side">
+              ${frontSideClone.outerHTML}
+            </div>
+            <div class="back-side">
+              ${backSideClone.outerHTML}
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  // REMOVED: All Canvas drawing functions - now using Browserless.io for perfect screenshots
+
+  // REMOVED: All unused helper functions - now using direct capture approach
+
+  // REMOVED: Unused function - dom-to-image handles optimization automatically
+
+  // REMOVED: Old Canvas drawing functions - now using direct HTML screenshot
+
+  // REMOVED: All remaining Canvas drawing functions - now using direct HTML screenshot
 
   const sendPostcardEmail = async (postcardImage: string): Promise<void> => {
     try {
@@ -250,15 +281,30 @@ const PostCardPage: React.FC = () => {
 
       setIsUploading(true);
       
-      // Convert base64 data URL to Blob for Cloudinary upload
-      const base64Data = postcardImage.split(',')[1]; // Remove data:image/jpeg;base64, prefix
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      let blob: Blob;
+      
+      // Check if the image is a blob URL (from backend) or base64 data URL
+      if (postcardImage.startsWith('blob:')) {
+        // It's a blob URL from the backend - fetch the blob
+        console.log('Processing blob URL from backend...');
+        const response = await fetch(postcardImage);
+        blob = await response.blob();
+      } else if (postcardImage.startsWith('data:')) {
+        // It's a base64 data URL - convert to blob
+        console.log('Processing base64 data URL...');
+        const base64Data = postcardImage.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        blob = new Blob([byteArray], { type: 'image/jpeg' });
+      } else {
+        throw new Error('Invalid image format received');
       }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+      
+      console.log('Image blob size:', blob.size, 'bytes');
       
       // Upload high-quality postcard to Cloudinary
       const formData = new FormData();
@@ -311,7 +357,14 @@ const PostCardPage: React.FC = () => {
         subject: `Digital Postcard from @${userData.handle}`
       };
 
-      console.log('Sending email with params:', templateParams);
+      console.log('🔍 DEBUG: Template parameters being sent to EmailJS:');
+      console.log('  - to_email:', templateParams.to_email);
+      console.log('  - to_name:', templateParams.to_name);
+      console.log('  - from_handle:', templateParams.from_handle);
+      console.log('  - message:', templateParams.message);
+      console.log('  - postcard_image:', templateParams.postcard_image);
+      console.log('  - subject:', templateParams.subject);
+      console.log('🔍 Full templateParams object:', templateParams);
 
       const result = await emailjs.send(
         emailConfig.serviceId,

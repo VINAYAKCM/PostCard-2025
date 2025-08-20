@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Postcard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    <button class="test-button" onclick="testAPI()">Test Generate Postcard</button>
+    <div class="result" id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing API...';
+            
+            try {
+                const response = await fetch('http://localhost:3002/api/generate-postcard', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        htmlContent: '<html><body><h1>Test Postcard</h1><p>This is a test</p></body></html>',
+                        width: 200,
+                        height: 200,
+                        format: 'png',
+                        quality: 100
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    resultDiv.innerHTML = `<h3>✅ Success!</h3><img src="${imageUrl}" style="border: 1px solid #ccc;" />`;
+                } else {
+                    resultDiv.innerHTML = `<h3>❌ Error: ${response.status}</h3><p>${response.statusText}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

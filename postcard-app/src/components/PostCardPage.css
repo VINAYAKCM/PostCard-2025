@@ -401,10 +401,11 @@
 }
 
 .stamp-image {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
   object-fit: cover;
+  object-position: center;
 }
 
 .stamp-placeholder-text {
