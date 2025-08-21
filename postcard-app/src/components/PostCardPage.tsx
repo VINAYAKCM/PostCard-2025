@@ -211,7 +211,7 @@ const PostCardPage: React.FC = () => {
             
             body {
               font-family: 'Inter', sans-serif;
-              background: #f0f0f0;
+              background: transparent; /* Changed from #f0f0f0 to transparent */
               display: flex;
               justify-content: center;
               align-items: center;
@@ -222,18 +222,28 @@ const PostCardPage: React.FC = () => {
             .postcard-container {
               width: 512px;
               height: 694px;
-              background: linear-gradient(to bottom, #FFFFFF 0%, #FFEBD4 100%);
+              background: linear-gradient(to bottom, #E8FDFF 0%, #FFFFFF 100%); /* Updated to user's colors */
               border-radius: 20px;
               box-shadow: 4px 4px 18px rgba(0, 0, 0, 0.25);
               overflow: hidden;
               position: relative;
+              margin: 0;
+              padding: 0;
+              line-height: 0;
+              font-size: 0;
             }
             
             .front-side {
               width: 100%;
               height: 347px;
               position: relative;
-              background: transparent;
+              background: linear-gradient(to bottom, #E8FDFF 0%, #FFFFFF 100%); /* Updated to user's colors */
+              margin: 0;
+              padding: 0;
+              top: 0;
+              left: 0;
+              right: 0;
+              border-radius: 20px 20px 0 0; /* Top corners rounded, bottom corners 0px */
             }
             
             .back-side {
@@ -241,6 +251,13 @@ const PostCardPage: React.FC = () => {
               height: 347px;
               position: relative;
               background: #FFFFFF;
+              margin: 0;
+              padding: 0;
+              top: 0;
+              left: 0;
+              right: 0;
+              margin-top: 0;
+              border-radius: 0 0 20px 20px; /* Top corners 0px, bottom corners rounded */
             }
             
             /* All your CSS styles */
@@ -397,90 +414,124 @@ const PostCardPage: React.FC = () => {
         {/* Left Column - Input Form */}
         <div className="input-column">
           <div className="header">
-            <h1>Send a letter</h1>
-            <p>It's like a digital guestbook.</p>
+            <h1>Bringing back Postcards,<br />but online.</h1>
           </div>
-
+          
           <div className="input-form">
-            <div className="form-group">
-              <label htmlFor="recipient-name">Recipient Name</label>
-              <input
-                type="text"
-                id="recipient-name"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                className="form-input"
-                placeholder="Who are you sending this to?"
-              />
+            {/* Name and Handle Row */}
+            <div className="name-handle-row">
+              <div className="form-group">
+                <label htmlFor="recipient-name">Who's getting this postcard?</label>
+                <input
+                  type="text"
+                  id="recipient-name"
+                  className="form-input"
+                  placeholder="Name"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="handle">Got your handle? (eg: cmv01)</label>
+                <input
+                  type="text"
+                  id="handle"
+                  className="form-input"
+                  placeholder="Handle"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
+            {/* Email */}
             <div className="form-group">
-              <label htmlFor="handle">Handle (e.g. @handle)</label>
-              <input
-                type="text"
-                id="handle"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-                className="form-input"
-                placeholder="Enter your handle"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="sender-email">Email</label>
+              <label htmlFor="sender-email">Where should I drop it off?</label>
               <input
                 type="email"
                 id="sender-email"
+                className="form-input"
+                placeholder="Email address"
                 value={senderEmail}
                 onChange={(e) => setSenderEmail(e.target.value)}
-                className="form-input"
-                placeholder="Enter your email"
+                required
               />
             </div>
 
+            {/* Message */}
             <div className="form-group">
-              <label htmlFor="message">Message</label>
+              <label htmlFor="message">What do you wanna tell them?</label>
               <textarea
                 id="message"
+                className="form-textarea"
+                placeholder="Message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="form-textarea"
-                placeholder="Write your message here..."
-                rows={4}
                 maxLength={200}
+                required
               />
-              <small className="char-count">{message.length}/200</small>
+              <div className="char-count">{message.length}/200</div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="photo">Photo</label>
-              <div className="photo-upload-area" onClick={() => fileInputRef.current?.click()}>
-                {photo ? (
-                  <img src={photo} alt="Uploaded" className="photo-preview" />
-                ) : (
-                  <div className="upload-placeholder">
-                    <span>Click to upload photo</span>
-                  </div>
-                )}
+            {/* Photo and Signature Row */}
+            <div className="photo-signature-row">
+              <div className="form-group">
+                <label htmlFor="photo">Photo</label>
+                <div 
+                  className="photo-upload-area"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {photo ? (
+                    <img src={photo} alt="Selected photo" className="photo-preview" />
+                  ) : (
+                    <div className="upload-placeholder">
+                      <span>Add a picture</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  id="photo"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  style={{ display: 'none' }}
+                />
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                id="photo"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                style={{ display: 'none' }}
-              />
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="signature">Signature</label>
-              <SignatureCanvas onSave={handleSignatureSave} />
-              {signature && (
-                <button onClick={clearSignature} className="clear-signature">
-                  Clear signature
-                </button>
-              )}
+              <div className="form-group">
+                <label htmlFor="signature">How do you want to sign it?</label>
+                <div className="signature-canvas">
+                  <SignatureCanvas onSave={handleSignatureSave} />
+                  {!signature && (
+                    <div className="signature-placeholder">
+                      <span>Signature</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="clear-signature"
+                    onClick={() => {
+                      // Clear our signature data for the preview
+                      clearSignature();
+                      
+                      // Find and click the SignatureCanvas clear button to clear the input field
+                      const signatureCanvas = document.querySelector('.signature-canvas');
+                      if (signatureCanvas) {
+                        const canvasClearButton = signatureCanvas.querySelector('button');
+                        if (canvasClearButton) {
+                          canvasClearButton.click();
+                        }
+                      }
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
             </div>
 
             <button
