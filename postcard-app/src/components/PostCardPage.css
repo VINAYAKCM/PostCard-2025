@@ -13,17 +13,30 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0.25 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0.25 0'/%3E%3C/svg%3E");
   pointer-events: none;
   border-radius: 20px;
   opacity: 1;
+}
+
+/* Vertical separator line between form and postcard preview */
+.postcard-page::after {
+  content: '';
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 750px;
+  width: 1px;
+  background-color: rgba(170, 170, 170, 0.3);
+  z-index: 10;
 }
 
 .postcard-container {
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
-  gap: 40px;
+  gap: 160px;
   position: relative;
   z-index: 1;
 }
@@ -355,7 +368,7 @@
   position: relative;
   top: 0;
   border-radius: 20px 20px 0 0; /* Top corners rounded, bottom corners 0px for seamless connection */
-  background: linear-gradient(to bottom, #E8FDFF 0%, #FFFFFF 100%); /* Updated to user's colors */
+  background: #F8FFEE; /* Updated to user's requested color */
 }
 
 .back-side {
@@ -366,6 +379,7 @@
   top: 0;
   margin-top: -2px; /* Increased overlap to eliminate any remaining gap */
   border-radius: 0 0 20px 20px; /* Top corners 0px for seamless connection, bottom corners rounded */
+  background: #F8FFEE; /* Updated to user's requested color */
 }
 
 .postcard-content {
