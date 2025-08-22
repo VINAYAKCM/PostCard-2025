@@ -17,6 +17,7 @@ const PostCardPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
+  const [postcardBackgroundColor, setPostcardBackgroundColor] = useState('#FFFFFF');
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,6 +70,7 @@ const PostCardPage: React.FC = () => {
       setMessage('');
       setPhoto(null);
       setSignature(null);
+      setPostcardBackgroundColor('#FFFFFF'); // Reset to default color
     } catch (error) {
       console.error('Error sending postcard:', error);
       alert('Failed to send postcard. Please try again.');
@@ -222,7 +224,7 @@ const PostCardPage: React.FC = () => {
             .postcard-container {
               width: 512px;
               height: 694px;
-              background: linear-gradient(to bottom, #E8FDFF 0%, #FFFFFF 100%); /* Updated to user's colors */
+              background: ${postcardBackgroundColor};
               border-radius: 20px;
               box-shadow: 4px 4px 18px rgba(0, 0, 0, 0.25);
               overflow: hidden;
@@ -237,7 +239,7 @@ const PostCardPage: React.FC = () => {
               width: 100%;
               height: 347px;
               position: relative;
-              background: linear-gradient(to bottom, #E8FDFF 0%, #FFFFFF 100%); /* Updated to user's colors */
+              background: ${postcardBackgroundColor};
               margin: 0;
               padding: 0;
               top: 0;
@@ -250,7 +252,7 @@ const PostCardPage: React.FC = () => {
               width: 100%;
               height: 347px;
               position: relative;
-              background: #FFFFFF;
+              background: ${postcardBackgroundColor};
               margin: 0;
               padding: 0;
               top: 0;
@@ -534,6 +536,20 @@ const PostCardPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Color Picker Row */}
+            <div className="form-group">
+              <label htmlFor="postcard-color">Choose your postcard color:</label>
+              <div className="color-picker-container">
+                <input
+                  type="color"
+                  id="postcard-color"
+                  value={postcardBackgroundColor}
+                  onChange={(e) => setPostcardBackgroundColor(e.target.value)}
+                  className="color-picker"
+                />
+              </div>
+            </div>
+
             <button
               onClick={handleSend}
               disabled={!isFormValid || isSending || isUploading}
@@ -542,45 +558,14 @@ const PostCardPage: React.FC = () => {
               {isUploading ? 'Uploading...' : isSending ? 'Sending...' : 'Send'}
             </button>
 
-            {/* Download Button for Testing */}
-            {isFormValid && (
-              <button
-                onClick={async () => {
-                  try {
-                    // Use high-quality version for download testing
-                    const postcardImage = await generatePostcardImage();
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = postcardImage;
-                    downloadLink.download = `postcard_hq_test_${handle}.png`;
-                    downloadLink.click();
-                    console.log('High-quality test postcard downloaded');
-                  } catch (error) {
-                    console.error('Error generating test postcard:', error);
-                    alert('Failed to generate test postcard');
-                  }
-                }}
-                className="download-button"
-                style={{
-                  marginTop: '10px',
-                  padding: '12px',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
-              >
-                📥 Download High-Quality Test Postcard
-              </button>
-            )}
+
           </div>
         </div>
 
         {/* Right Column - Postcard Preview */}
         <div className="preview-column">
           {/* Front Side Postcard */}
-          <div className="postcard-frame front-side">
+          <div className="postcard-frame front-side" style={{ backgroundColor: postcardBackgroundColor }}>
             <div className="postcard-content">
               <div className="left-content">
                 <div className="greeting">Hey {recipientName ? `${recipientName},` : ','}</div>
@@ -619,7 +604,7 @@ const PostCardPage: React.FC = () => {
           </div>
 
           {/* Back Side Postcard */}
-          <div className="postcard-frame back-side">
+          <div className="postcard-frame back-side" style={{ backgroundColor: postcardBackgroundColor }}>
             <div className="photo-container">
               {photo ? (
                 <img src={photo} alt="Postcard" className="postcard-photo" />

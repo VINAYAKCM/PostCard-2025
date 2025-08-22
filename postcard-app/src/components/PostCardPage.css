@@ -295,7 +295,7 @@
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.2s ease;
-  margin-top: 16px; /* Reduced from 32px to 16px to move button up */
+  margin-top: 8px; /* Reduced from 16px to 8px to move button up */
   font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -324,25 +324,7 @@
   box-shadow: none;
 }
 
-.download-button {
-  margin-top: 16px;
-  padding: 16px 24px;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
 
-.download-button:hover {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
 
 /* Right Column - Postcard Preview */
 .preview-column {
@@ -605,4 +587,73 @@
   .header h1 {
     font-size: 2rem;
   }
+}
+
+/* Color Picker Styles */
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-picker {
+  width: 35px;
+  height: 30px;
+  border: none;
+  border-radius: 8px !important;
+  cursor: pointer;
+  background: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Force rounded corners with more specific selectors */
+input[type="color"].color-picker {
+  border-radius: 8px !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input[type="color"] {
+  border-radius: 8px !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Custom color picker styling */
+.color-picker::-webkit-color-swatch-wrapper {
+  border-radius: 8px !important;
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+  border-radius: 8px !important;
+  border: none;
+}
+
+.color-picker::-moz-color-swatch {
+  border-radius: 8px !important;
+  border: none;
+}
+
+.color-picker-label {
+  font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Make color picker label and input appear inline */
+.form-group:has(.color-picker-container) {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-group:has(.color-picker-container) label {
+  margin-bottom: 0;
+  white-space: nowrap;
 }
