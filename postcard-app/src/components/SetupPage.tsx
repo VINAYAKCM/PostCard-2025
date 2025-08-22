@@ -5,7 +5,6 @@ import './SetupPage.css';
 
 const SetupPage: React.FC = () => {
   const [name, setName] = useState('');
-  const [handle, setHandle] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,58 +25,47 @@ const SetupPage: React.FC = () => {
   };
 
   const handleSetup = () => {
-    if (name.trim() && handle.trim() && profileImage) {
+    if (name.trim() && profileImage) {
       setUserData({
         name: name.trim(),
-        handle: handle.trim(),
+        handle: name.trim().toLowerCase().replace(/\s+/g, ''), // Generate handle from name
         profileImage
       });
       navigate('/postcard');
     }
   };
 
-  const isFormValid = name.trim() && handle.trim() && profileImage;
+  const isFormValid = name.trim() && profileImage;
 
   return (
     <div className="setup-page">
       <div className="setup-container">
-        <h1>Welcome to PostCard</h1>
-        <p className="subtitle">Let's get you set up to send beautiful digital postcards</p>
+        <h1>Postcards, but reimagined.</h1>
+        <p className="subtitle">"Your words deserve more than a<br />text bubble."</p>
+        
+        <div className="separator-line"></div>
         
         <div className="setup-form">
           <div className="form-group">
-            <label htmlFor="name">Your Name</label>
+            <label htmlFor="name">Who's signing this postcard?</label>
             <input
               type="text"
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
+              placeholder="Enter your name"
               className="setup-input"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="handle">User Handle</label>
-            <input
-              type="text"
-              id="handle"
-              value={handle}
-              onChange={(e) => setHandle(e.target.value)}
-              placeholder="@username"
-              className="setup-input"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="profile-image">Profile Picture</label>
+            <label htmlFor="profile-image">Choose a photo — we'll turn it into your stamp</label>
             <div className="image-upload-area" onClick={() => fileInputRef.current?.click()}>
               {imagePreview ? (
                 <img src={imagePreview} alt="Profile preview" className="profile-preview" />
               ) : (
                 <div className="upload-placeholder">
-                  <span>Click to upload image</span>
-                  <small>This will be used to create your custom stamp</small>
+                  <span>Add a picture</span>
                 </div>
               )}
             </div>

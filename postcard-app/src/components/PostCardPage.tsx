@@ -583,7 +583,7 @@ const PostCardPage: React.FC = () => {
           <div className="postcard-frame front-side">
             <div className="postcard-content">
               <div className="left-content">
-                <div className="greeting">Dear {recipientName ? `${recipientName},` : ','}</div>
+                <div className="greeting">Hey {recipientName ? `${recipientName},` : ','}</div>
                 <div className="message">{message || ''}</div>
                 <div className="closing">
                   Sincerely, 
