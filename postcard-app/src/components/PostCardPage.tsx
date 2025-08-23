@@ -134,8 +134,8 @@ const PostCardPage: React.FC = () => {
         },
         body: JSON.stringify({
           htmlContent: postcardHTML,
-          width: 768, // 1.5x resolution for email
-          height: 1041, // 1.5x resolution for email
+          width: 512, // Match exact postcard dimensions
+          height: 694, // Match exact postcard dimensions
           format: 'jpeg',
           quality: 95
         })
@@ -213,12 +213,12 @@ const PostCardPage: React.FC = () => {
             
             body {
               font-family: 'Inter', sans-serif;
-              background: transparent; /* Changed from #f0f0f0 to transparent */
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
+              background: #FFFFFF;
               margin: 0;
+              padding: 0;
+              width: 512px;
+              height: 694px;
+              overflow: hidden;
             }
             
             .postcard-container {
