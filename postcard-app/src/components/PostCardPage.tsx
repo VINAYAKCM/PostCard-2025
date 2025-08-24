@@ -225,7 +225,7 @@ const PostCardPage: React.FC = () => {
               width: 512px;
               height: 694px;
               background: ${postcardBackgroundColor};
-              border-radius: 20px;
+              border-radius: 0px; /* Sharp corners for final postcard */
               box-shadow: 4px 4px 18px rgba(0, 0, 0, 0.25);
               overflow: hidden;
               position: relative;
