@@ -1,7 +1,7 @@
 .postcard-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #E7F0DB 0%, #FFFFFF 100%); /* Updated gradient: top-left to bottom-right */
-  padding: 40px 20px;
+  padding: 20px 20px 0px 20px;
   font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
 }

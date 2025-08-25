@@ -370,6 +370,7 @@ const PostCardPage: React.FC = () => {
       const templateParams = {
         to_email: senderEmail, // Add recipient email
         to_name: recipientName,
+        from_email: userData.email, // Add sender's email
         from_handle: userData.handle,
         message: message,
         postcard_image: imageUrl, // Cloudinary URL
@@ -379,6 +380,7 @@ const PostCardPage: React.FC = () => {
       console.log('🔍 DEBUG: Template parameters being sent to EmailJS:');
       console.log('  - to_email:', templateParams.to_email);
       console.log('  - to_name:', templateParams.to_name);
+      console.log('  - from_email:', templateParams.from_email);
       console.log('  - from_handle:', templateParams.from_handle);
       console.log('  - message:', templateParams.message);
       console.log('  - postcard_image:', templateParams.postcard_image);

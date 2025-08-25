@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 
 interface UserData {
   name: string;
+  email: string;
   handle: string;
   profileImage: string | null;
 }

@@ -5,6 +5,7 @@ import './SetupPage.css';
 
 const SetupPage: React.FC = () => {
   const [name, setName] = useState('');
+  const [fromEmail, setFromEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,9 +26,10 @@ const SetupPage: React.FC = () => {
   };
 
   const handleSetup = () => {
-    if (name.trim() && profileImage) {
+    if (name.trim() && fromEmail.trim() && profileImage) {
       setUserData({
         name: name.trim(),
+        email: fromEmail.trim(),
         handle: name.trim().toLowerCase().replace(/\s+/g, ''), // Generate handle from name
         profileImage
       });
@@ -35,7 +37,7 @@ const SetupPage: React.FC = () => {
     }
   };
 
-  const isFormValid = name.trim() && profileImage;
+  const isFormValid = name.trim() && fromEmail.trim() && profileImage;
 
   return (
     <div className="setup-page">
@@ -54,6 +56,18 @@ const SetupPage: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
+              className="setup-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="from-email">Your email address</label>
+            <input
+              type="email"
+              id="from-email"
+              value={fromEmail}
+              onChange={(e) => setFromEmail(e.target.value)}
+              placeholder="Your email address"
               className="setup-input"
             />
           </div>

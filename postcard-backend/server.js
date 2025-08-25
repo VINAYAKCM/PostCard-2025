@@ -2,9 +2,45 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const cors = require('cors');
 const path = require('path');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = 3002;
+
+// MongoDB connection string
+const MONGODB_URI = 'mongodb+srv://cmvinayak04:rhEpD4YY0WcEnXDC@cluster0.060pymq.mongodb.net/postcard-app?retryWrites=true&w=majority&ssl=true&tls=true';
+
+// MongoDB client
+let dbClient;
+let db;
+
+// Connect to MongoDB
+async function connectToMongoDB() {
+  try {
+    dbClient = new MongoClient(MONGODB_URI, {
+      ssl: true,
+      tls: true,
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 10,
+      retryWrites: true,
+      w: 'majority'
+    });
+    await dbClient.connect();
+    db = dbClient.db('postcard-app');
+    console.log('✅ Connected to MongoDB Atlas successfully');
+    
+    // Create collections if they don't exist
+    await db.createCollection('users');
+    await db.createCollection('postcards');
+    console.log('✅ Database collections ready');
+    
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    console.log('🔍 Check if your IP is whitelisted in MongoDB Atlas Network Access');
+  }
+}
 
 // Enable CORS for frontend
 app.use(cors());
@@ -17,6 +53,16 @@ let browser;
 // Initialize browser
 async function initBrowser() {
   try {
+    console.log('🔄 Initializing Puppeteer browser...');
+    
+    // Kill any existing browser processes
+    try {
+      await require('child_process').exec('pkill -f chromium');
+      await require('child_process').exec('pkill -f chrome');
+    } catch (e) {
+      // Ignore errors if no processes to kill
+    }
+    
     browser = await puppeteer.launch({
       headless: 'new',
       args: [
@@ -26,12 +72,25 @@ async function initBrowser() {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu'
-      ]
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-ipc-flooding-protection',
+        '--single-process'
+      ],
+      timeout: 30000
     });
+    
     console.log('✅ Browser initialized successfully');
+    return browser;
   } catch (error) {
     console.error('❌ Error initializing browser:', error);
+    console.log('⚠️ Browser initialization failed, but server will continue running');
+    browser = null;
+    return null;
   }
 }
 
@@ -44,6 +103,27 @@ app.post('/api/generate-postcard', async (req, res) => {
     
     if (!htmlContent) {
       return res.status(400).json({ error: 'HTML content is required' });
+    }
+    
+    // Ensure browser is initialized
+    if (!browser) {
+      console.log('🔄 Browser not initialized, attempting to initialize...');
+      await initBrowser();
+      
+      if (!browser) {
+        console.log('🔄 First attempt failed, trying alternative method...');
+        // Try alternative launch method
+        try {
+          browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+          });
+          console.log('✅ Browser initialized with alternative method');
+        } catch (altError) {
+          console.error('❌ Alternative browser initialization also failed:', altError);
+          return res.status(500).json({ error: 'Browser initialization failed completely' });
+        }
+      }
     }
     
     // Create a new page
@@ -96,10 +176,37 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Postcard backend is running' });
 });
 
+// Database test endpoint
+app.get('/api/db-test', async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(500).json({ error: 'Database not connected' });
+    }
+    
+    // Test database connection by listing collections
+    const collections = await db.listCollections().toArray();
+    res.json({ 
+      status: 'OK', 
+      message: 'Database connection successful',
+      collections: collections.map(col => col.name),
+      database: 'postcard-app'
+    });
+    
+  } catch (error) {
+    console.error('❌ Database test error:', error);
+    res.status(500).json({ error: 'Database test failed', details: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, async () => {
   console.log(`🚀 Postcard backend server running on port ${PORT}`);
-  await initBrowser();
+  await connectToMongoDB();
+  
+  // Initialize browser in background (don't wait for it)
+  initBrowser().catch(err => {
+    console.log('⚠️ Browser will be initialized when needed');
+  });
 });
 
 // Graceful shutdown
@@ -108,6 +215,10 @@ process.on('SIGINT', async () => {
   if (browser) {
     await browser.close();
   }
+  if (dbClient) {
+    await dbClient.close();
+    console.log('✅ MongoDB connection closed');
+  }
   process.exit(0);
 });
 
@@ -115,6 +226,10 @@ process.on('SIGTERM', async () => {
   console.log('\n🛑 Shutting down server...');
   if (browser) {
     await browser.close();
+  }
+  if (dbClient) {
+    await dbClient.close();
+    console.log('✅ MongoDB connection closed');
   }
   process.exit(0);
 });
