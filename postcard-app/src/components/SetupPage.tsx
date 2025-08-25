@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import UnlockIcon from '../assets/Unlock.svg';
 import './SetupPage.css';
 
 const SetupPage: React.FC = () => {
@@ -46,13 +47,13 @@ const SetupPage: React.FC = () => {
       const data = await response.json();
       
       if (data.isCreator) {
-        setEmailLimitMessage('🎉 Creator access - unlimited postcards!');
+        setEmailLimitMessage('Executive access granted');
         setIsCreator(true);
       } else if (data.limitReached) {
-        setEmailLimitMessage('❌ You have already sent a postcard from this email address');
+        setEmailLimitMessage('You have already reached your limit.');
         setIsCreator(false);
       } else {
-        setEmailLimitMessage('✅ Email available for postcard sending');
+        setEmailLimitMessage('One postcard trial available');
         setIsCreator(false);
       }
     } catch (error) {
@@ -80,7 +81,7 @@ const SetupPage: React.FC = () => {
     }
   };
 
-  const isFormValid = name.trim() && fromEmail.trim() && profileImage;
+  const isFormValid = name.trim() && fromEmail.trim() && profileImage && !emailLimitMessage.includes('You have already reached your limit.');
 
   return (
     <div className="setup-page">
@@ -115,8 +116,9 @@ const SetupPage: React.FC = () => {
               className="setup-input"
             />
             {emailLimitMessage && (
-              <div className={`email-limit-message ${isCreator ? 'creator' : emailLimitMessage.includes('❌') ? 'error' : 'success'}`}>
-                {isCheckingEmail ? '🔄 Checking...' : emailLimitMessage}
+              <div className={`email-limit-message ${isCreator ? 'vip' : emailLimitMessage.includes('❌') ? 'error' : 'normal'}`}>
+                {isCreator && <img src={UnlockIcon} alt="Unlock" className="unlock-icon" />}
+                <span className="message-text">{emailLimitMessage}</span>
               </div>
             )}
           </div>
