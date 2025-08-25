@@ -4,9 +4,11 @@ import { UserContext } from '../context/UserContext';
 import emailjs from '@emailjs/browser';
 import { emailConfig } from '../config/emailConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
+import DownloadIcon from '../assets/Download.svg';
 // REMOVED: dom-to-image import - now using Canvas API with Figma specs
 
 import './PostCardPage.css';
+import html2canvas from 'html2canvas';
 
 const PostCardPage: React.FC = () => {
   const userContext = useContext(UserContext);
@@ -560,12 +562,39 @@ const PostCardPage: React.FC = () => {
               {isUploading ? 'Uploading...' : isSending ? 'Sending...' : 'Send'}
             </button>
 
-
           </div>
         </div>
 
         {/* Right Column - Postcard Preview */}
         <div className="preview-column">
+          {/* Download Button - Top Right Corner */}
+          <button
+            onClick={async () => {
+              if (isFormValid) {
+                try {
+                  // Use the EXACT same function that generates postcards for emails
+                  const postcardImage = await generateEmailFriendlyImage();
+                  
+                  // Create download link
+                  const link = document.createElement('a');
+                  link.download = `postcard-${recipientName || 'postcard'}.png`;
+                  link.href = postcardImage;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                } catch (error) {
+                  console.error('Error downloading postcard:', error);
+                  alert('Failed to download postcard. Please try again.');
+                }
+              }
+            }}
+            disabled={!isFormValid}
+            className={`download-button ${isFormValid ? 'active' : 'disabled'}`}
+            title={isFormValid ? 'Download postcard' : 'Complete the form to download'}
+          >
+            <img src={DownloadIcon} alt="Download" className="download-icon" />
+          </button>
+          
           {/* Front Side Postcard */}
           <div className="postcard-frame front-side" style={{ backgroundColor: postcardBackgroundColor }}>
             <div className="postcard-content">

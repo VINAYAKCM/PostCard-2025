@@ -10,6 +10,12 @@ const PORT = 3002;
 // MongoDB connection string
 const MONGODB_URI = 'mongodb+srv://cmvinayak04:rhEpD4YY0WcEnXDC@cluster0.060pymq.mongodb.net/postcard-app?retryWrites=true&w=majority&ssl=true&tls=true';
 
+// Creator emails (unlimited access)
+const CREATOR_EMAILS = [
+  'cmvinayak04@gmail.com',    // You - the creator
+  'cmvigneshone@gmail.com'    // Your brother - family access
+];
+
 // MongoDB client
 let dbClient;
 let db;
@@ -99,10 +105,30 @@ app.post('/api/generate-postcard', async (req, res) => {
   try {
     console.log('🎯 Generating postcard image...');
     
-    const { htmlContent, width = 1024, height = 1388, format = 'png', quality = 100 } = req.body;
+    const { htmlContent, width = 1024, height = 1388, format = 'png', quality = 100, fromEmail, toName, message } = req.body;
     
     if (!htmlContent) {
       return res.status(400).json({ error: 'HTML content is required' });
+    }
+    
+    // Check email limit before generating
+    if (fromEmail) {
+      // Check if email is a creator (unlimited access)
+      const isCreator = CREATOR_EMAILS.includes(fromEmail.toLowerCase());
+      
+      if (!isCreator) {
+        const existingPostcard = await db.collection('postcards').findOne({ 
+          from_email: fromEmail.toLowerCase() 
+        });
+        
+        if (existingPostcard) {
+          return res.status(403).json({ 
+            error: 'Email limit reached', 
+            message: 'You have already sent a postcard from this email address',
+            limitReached: true
+          });
+        }
+      }
     }
     
     // Ensure browser is initialized
@@ -153,6 +179,23 @@ app.post('/api/generate-postcard', async (req, res) => {
     // Close the page
     await page.close();
     
+    // Store postcard data in MongoDB if email provided
+    if (fromEmail && db) {
+      try {
+        await db.collection('postcards').insertOne({
+          from_email: fromEmail.toLowerCase(),
+          to_name: toName || 'Unknown',
+          message: message || '',
+          sentAt: new Date(),
+          image_generated: true
+        });
+        console.log('✅ Postcard data stored in MongoDB');
+      } catch (dbError) {
+        console.error('⚠️ Failed to store postcard data:', dbError);
+        // Don't fail the request if DB storage fails
+      }
+    }
+    
     // Set response headers
     res.set({
       'Content-Type': format === 'png' ? 'image/png' : 'image/jpeg',
@@ -195,6 +238,61 @@ app.get('/api/db-test', async (req, res) => {
   } catch (error) {
     console.error('❌ Database test error:', error);
     res.status(500).json({ error: 'Database test failed', details: error.message });
+  }
+});
+
+// Check email limit endpoint
+app.post('/api/check-email-limit', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    if (!db) {
+      return res.status(500).json({ error: 'Database not connected' });
+    }
+    
+    // Check if email is a creator (unlimited access)
+    const isCreator = CREATOR_EMAILS.includes(email.toLowerCase());
+    
+    if (isCreator) {
+      return res.json({ 
+        limitReached: false, 
+        message: 'Creator access - unlimited postcards available!',
+        isCreator: true
+      });
+    }
+    
+    // Check if email has already sent a postcard
+    const existingPostcard = await db.collection('postcards').findOne({ 
+      from_email: email.toLowerCase() 
+    });
+    
+    if (existingPostcard) {
+      res.json({ 
+        limitReached: true, 
+        message: 'You have already sent a postcard from this email address',
+        isCreator: false,
+        postcardData: {
+          id: existingPostcard._id,
+          sentAt: existingPostcard.sentAt,
+          toName: existingPostcard.to_name,
+          message: existingPostcard.message
+        }
+      });
+    } else {
+      res.json({ 
+        limitReached: false, 
+        message: 'Email address available for postcard sending',
+        isCreator: false
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Email limit check error:', error);
+    res.status(500).json({ error: 'Failed to check email limit', details: error.message });
   }
 });
 

@@ -5,12 +5,8 @@ import './SetupPage.css';
 
 const SetupPage: React.FC = () => {
   const [name, setName] = useState('');
-  const [fromEmail, setFromEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const [emailLimitMessage, setEmailLimitMessage] = useState('');
-  const [isCreator, setIsCreator] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setUserData } = useUser();
   const navigate = useNavigate();
@@ -28,59 +24,18 @@ const SetupPage: React.FC = () => {
     }
   };
 
-  const checkEmailLimit = async (email: string) => {
-    if (!email.trim()) return;
-    
-    setIsCheckingEmail(true);
-    setEmailLimitMessage('');
-    
-    try {
-      const response = await fetch('http://localhost:3002/api/check-email-limit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email.trim() })
-      });
-      
-      const data = await response.json();
-      
-      if (data.isCreator) {
-        setEmailLimitMessage('🎉 Creator access - unlimited postcards!');
-        setIsCreator(true);
-      } else if (data.limitReached) {
-        setEmailLimitMessage('❌ You have already sent a postcard from this email address');
-        setIsCreator(false);
-      } else {
-        setEmailLimitMessage('✅ Email available for postcard sending');
-        setIsCreator(false);
-      }
-    } catch (error) {
-      setEmailLimitMessage('⚠️ Could not check email limit');
-      setIsCreator(false);
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  };
-
   const handleSetup = () => {
-    if (name.trim() && fromEmail.trim() && profileImage) {
-      // Check if user is creator or has available postcard
-      if (isCreator || emailLimitMessage.includes('✅')) {
-        setUserData({
-          name: name.trim(),
-          email: fromEmail.trim(),
-          handle: name.trim().toLowerCase().replace(/\s+/g, ''), // Generate handle from name
-          profileImage
-        });
-        navigate('/postcard');
-      } else {
-        setEmailLimitMessage('❌ Cannot proceed - email limit reached');
-      }
+    if (name.trim() && profileImage) {
+      setUserData({
+        name: name.trim(),
+        handle: name.trim().toLowerCase().replace(/\s+/g, ''), // Generate handle from name
+        profileImage
+      });
+      navigate('/postcard');
     }
   };
 
-  const isFormValid = name.trim() && fromEmail.trim() && profileImage;
+  const isFormValid = name.trim() && profileImage;
 
   return (
     <div className="setup-page">
@@ -101,24 +56,6 @@ const SetupPage: React.FC = () => {
               placeholder="Enter your name"
               className="setup-input"
             />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="from-email">Your email address</label>
-            <input
-              type="email"
-              id="from-email"
-              value={fromEmail}
-              onChange={(e) => setFromEmail(e.target.value)}
-              onBlur={(e) => checkEmailLimit(e.target.value)}
-              placeholder="Your email address"
-              className="setup-input"
-            />
-            {emailLimitMessage && (
-              <div className={`email-limit-message ${isCreator ? 'creator' : emailLimitMessage.includes('❌') ? 'error' : 'success'}`}>
-                {isCheckingEmail ? '🔄 Checking...' : emailLimitMessage}
-              </div>
-            )}
           </div>
 
           <div className="form-group">
