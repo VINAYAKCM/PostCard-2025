@@ -8,7 +8,8 @@ const app = express();
 const PORT = 3002;
 
 // MongoDB connection string
-const MONGODB_URI = 'mongodb+srv://cmvinayak04:rhEpD4YY0WcEnXDC@cluster0.060pymq.mongodb.net/postcard-app?retryWrites=true&w=majority&ssl=true&tls=true';
+const MONGODB_URI = 'mongodb+srv://cmvinayak04:rhEpD4YY0WcEnXDC@cluster0.060pymq.mongodb.net/postcard-app?retryWrites=true&w=majority';
+const DB_NAME = 'postcard-app';
 
 // Creator emails (unlimited access)
 const CREATOR_EMAILS = [
@@ -23,21 +24,25 @@ let db;
 // Connect to MongoDB
 async function connectToMongoDB() {
   try {
+    console.log('🔄 Connecting to MongoDB Atlas...');
+    
     dbClient = new MongoClient(MONGODB_URI, {
-      ssl: true,
-      tls: true,
-      serverSelectionTimeoutMS: 30000,
-      connectTimeoutMS: 30000,
-      socketTimeoutMS: 30000,
+      serverApi: {
+        version: '1',
+        strict: true,
+        deprecationErrors: true,
+      },
       maxPoolSize: 10,
-      retryWrites: true,
-      w: 'majority'
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     });
+    
     await dbClient.connect();
-    db = dbClient.db('postcard-app');
     console.log('✅ Connected to MongoDB Atlas successfully');
     
-    // Create collections if they don't exist
+    db = dbClient.db(DB_NAME);
+    
+    // Ensure collections exist
     await db.createCollection('users');
     await db.createCollection('postcards');
     console.log('✅ Database collections ready');
@@ -232,7 +237,7 @@ app.get('/api/db-test', async (req, res) => {
       status: 'OK', 
       message: 'Database connection successful',
       collections: collections.map(col => col.name),
-      database: 'postcard-app'
+      database: DB_NAME
     });
     
   } catch (error) {

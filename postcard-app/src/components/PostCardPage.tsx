@@ -40,6 +40,33 @@ const PostCardPage: React.FC = () => {
     setSignature(signatureData);
   };
 
+  const checkEmailLimit = async (): Promise<boolean> => {
+    if (!userData?.email) return false;
+    
+    try {
+      const response = await fetch('http://localhost:3002/api/check-email-limit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: userData.email })
+      });
+      
+      const data = await response.json();
+      
+      if (data.isCreator) {
+        return true;
+      } else if (data.limitReached) {
+        return false;
+      } else {
+        return true;
+      }
+    } catch (error) {
+      console.error('Error checking email limit:', error);
+      return false;
+    }
+  };
+
   const clearSignature = () => {
     setSignature(null);
   };
@@ -47,6 +74,13 @@ const PostCardPage: React.FC = () => {
   const handleSend = async () => {
     if (!recipientName.trim() || !handle.trim() || !senderEmail.trim() || !message.trim() || !photo || !signature) {
       alert('Please fill in all fields including recipient name, photo and signature');
+      return;
+    }
+
+    // Check email limit before proceeding
+    const canSend = await checkEmailLimit();
+    if (!canSend) {
+      alert('You have already sent a postcard from this email address. Each email can only send one postcard.');
       return;
     }
 

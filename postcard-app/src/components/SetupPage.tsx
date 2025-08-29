@@ -57,7 +57,7 @@ const SetupPage: React.FC = () => {
         setIsCreator(false);
       }
     } catch (error) {
-      setEmailLimitMessage('⚠️ Could not check email limit');
+      setEmailLimitMessage('Could not check email limit');
       setIsCreator(false);
     } finally {
       setIsCheckingEmail(false);
@@ -67,7 +67,7 @@ const SetupPage: React.FC = () => {
   const handleSetup = () => {
     if (name.trim() && fromEmail.trim() && profileImage) {
       // Check if user is creator or has available postcard
-      if (isCreator || emailLimitMessage.includes('✅')) {
+      if (isCreator || emailLimitMessage.includes('One postcard trial available')) {
         setUserData({
           name: name.trim(),
           email: fromEmail.trim(),
@@ -76,7 +76,7 @@ const SetupPage: React.FC = () => {
         });
         navigate('/postcard');
       } else {
-        setEmailLimitMessage('❌ Cannot proceed - email limit reached');
+        setEmailLimitMessage('Cannot proceed - email limit reached');
       }
     }
   };
@@ -87,7 +87,7 @@ const SetupPage: React.FC = () => {
     <div className="setup-page">
       <div className="setup-container">
         <h1>Postcards, but reimagined.</h1>
-        <p className="subtitle">"Your words deserve more than a<br />text bubble."</p>
+        <p className="subtitle">"Sending love, not just messages."</p>
         
         <div className="separator-line"></div>
         
@@ -105,7 +105,7 @@ const SetupPage: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="from-email">Your email address</label>
+            <label htmlFor="from-email">Where should we send this from?</label>
             <input
               type="email"
               id="from-email"
