@@ -4,6 +4,7 @@ import { UserContext } from '../context/UserContext';
 import emailjs from '@emailjs/browser';
 import { emailConfig } from '../config/emailConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
+import { getApiUrl } from '../config/apiConfig';
 // REMOVED: dom-to-image import - now using Canvas API with Figma specs
 
 import './PostCardPage.css';
@@ -88,7 +89,7 @@ const PostCardPage: React.FC = () => {
       const postcardHTML = createPerfectPostcardHTML();
       
       // Step 2: Send to backend for perfect rendering
-      const response = await fetch('http://localhost:3002/api/generate-postcard', {
+      const response = await fetch(getApiUrl('/api/generate-postcard'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ const PostCardPage: React.FC = () => {
       const postcardHTML = createPerfectPostcardHTML();
       
       // Step 2: Send to backend for perfect rendering
-      const response = await fetch('http://localhost:3002/api/generate-postcard', {
+      const response = await fetch(getApiUrl('/api/generate-postcard'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
