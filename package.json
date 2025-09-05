@@ -1,6 +1,18 @@
 {
-  "dependencies": {
-    "cloudinary": "^2.7.0",
-    "dom-to-image": "^2.6.0"
+  "name": "postcard-project",
+  "version": "1.0.0",
+  "description": "Digital Postcard Creator - Frontend and Backend",
+  "private": true,
+  "workspaces": [
+    "postcard-app",
+    "postcard-backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"cd postcard-app && npm start\" \"cd postcard-backend && npm run dev\"",
+    "build": "cd postcard-app && npm run build",
+    "start": "cd postcard-backend && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
   }
 }

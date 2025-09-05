@@ -5,7 +5,7 @@ export const apiConfig = {
   // Backend API base URL
   baseUrl: isDevelopment 
     ? 'http://localhost:3002' 
-    : 'https://postcard-backend-2025.vercel.app', // Replace with your actual Vercel URL
+    : 'https://YOUR-BACKEND-URL.vercel.app', // Replace with your actual Vercel URL after deployment
   
   // API endpoints
   endpoints: {
