@@ -2,11 +2,11 @@
   "version": 2,
   "functions": {
     "api/generate-postcard.js": {
-      "runtime": "@vercel/node",
+      "runtime": "@vercel/node@20.9.0",
       "maxDuration": 30
     },
     "api/check-email-limit.js": {
-      "runtime": "@vercel/node",
+      "runtime": "@vercel/node@20.9.0",
       "maxDuration": 10
     }
   },
