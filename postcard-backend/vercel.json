@@ -2,15 +2,10 @@
   "version": 2,
   "functions": {
     "api/generate-postcard.js": {
-      "runtime": "@vercel/node@20.9.0",
       "maxDuration": 30
     },
     "api/check-email-limit.js": {
-      "runtime": "@vercel/node@20.9.0",
       "maxDuration": 10
     }
-  },
-  "env": {
-    "MONGODB_URI": "mongodb+srv://cmvinayak04:rhEpD4YY0WcEnXDC@cluster0.060pymq.mongodb.net/postcard-app?retryWrites=true&w=majority&ssl=true&tls=true"
   }
 }
