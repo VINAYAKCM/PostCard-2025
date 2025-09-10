@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "cloudinary": "^2.7.0",
-    "dom-to-image": "^2.6.0"
+    "dom-to-image": "^2.6.0",
+    "konva": "^9.3.22",
+    "react-konva": "^19.0.7"
   }
 }

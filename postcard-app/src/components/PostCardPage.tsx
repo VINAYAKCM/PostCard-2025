@@ -4,7 +4,6 @@ import { UserContext } from '../context/UserContext';
 import emailjs from '@emailjs/browser';
 import { emailConfig } from '../config/emailConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
-// REMOVED: dom-to-image import - now using Canvas API with Figma specs
 
 import './PostCardPage.css';
 
@@ -40,6 +39,33 @@ const PostCardPage: React.FC = () => {
 
   const clearSignature = () => {
     setSignature(null);
+  };
+
+  const handleDownload = async () => {
+    if (!recipientName.trim() || !handle.trim() || !message.trim() || !photo || !signature) {
+      alert('Please fill in all fields including recipient name, photo and signature');
+      return;
+    }
+
+    try {
+      // Generate high-quality postcard image for download
+      console.log('Generating postcard for download...');
+      const postcardImage = await generatePostcardImage();
+      console.log('Postcard generated successfully!');
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = postcardImage;
+      link.download = `postcard-${recipientName}-${new Date().toISOString().split('T')[0]}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('Postcard downloaded successfully!');
+    } catch (error) {
+      console.error('Error generating postcard:', error);
+      alert('Failed to generate postcard. Please try again.');
+    }
   };
 
   const handleSend = async () => {
@@ -79,39 +105,121 @@ const PostCardPage: React.FC = () => {
     }
   };
 
-  // BACKEND API SOLUTION: Perfect quality via Puppeteer backend
+  // PIXEL PERFECT SOLUTION: Capture preview elements directly
   const generatePostcardImage = async (): Promise<string> => {
-    console.log('🚀 [DOWNLOAD] Generating postcard via backend API...');
+    console.log('🚀 [DOWNLOAD] Generating pixel-perfect postcard...');
     
     try {
-      // Step 1: Create perfect HTML for the postcard
-      const postcardHTML = createPerfectPostcardHTML();
+      // Get the preview elements
+      const frontSide = document.querySelector('.front-side') as HTMLElement;
+      const backSide = document.querySelector('.back-side') as HTMLElement;
       
-      // Step 2: Send to backend for perfect rendering
-      const response = await fetch('http://localhost:3002/api/generate-postcard', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          htmlContent: postcardHTML,
-          width: 1024, // 2x resolution
-          height: 1388, // 2x resolution
-          format: 'png',
-          quality: 100
-        })
-      });
+      if (!frontSide || !backSide) {
+        throw new Error('Preview elements not found');
+      }
+
+      // Create a temporary container
+      const tempContainer = document.createElement('div');
+      tempContainer.style.cssText = `
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        width: 512px;
+        height: 694px;
+        background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      `;
       
-      if (!response.ok) {
-        throw new Error(`Backend error: ${response.status}`);
+      // Clone the elements
+      const frontClone = frontSide.cloneNode(true) as HTMLElement;
+      const backClone = backSide.cloneNode(true) as HTMLElement;
+      
+      // Style the clones
+      frontClone.style.cssText = `
+        width: 100%;
+        height: 347px;
+        background: ${postcardBackgroundColor};
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      `;
+      
+      backClone.style.cssText = `
+        width: 100%;
+        height: 347px;
+        background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      `;
+      
+      // Ensure images have proper object-fit styling (now supported by fixed version)
+      const backImage = backClone.querySelector('.postcard-photo') as HTMLImageElement;
+      if (backImage) {
+        backImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+        `;
       }
       
-      // Step 3: Convert response to data URL
-      const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
+      // Ensure stamp image has proper object-fit styling
+      const stampImage = frontClone.querySelector('.stamp-preview img') as HTMLImageElement;
+      if (stampImage) {
+        stampImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 8px;
+        `;
+      }
       
-      console.log('✅ [DOWNLOAD] Perfect postcard generated via backend API');
-      return imageUrl;
+      // Append to temp container
+      tempContainer.appendChild(frontClone);
+      tempContainer.appendChild(backClone);
+      document.body.appendChild(tempContainer);
+      
+      // Wait for images to load
+      const images = tempContainer.querySelectorAll('img');
+      const imagePromises = Array.from(images).map(img => {
+        return new Promise((resolve) => {
+          if (img.complete) {
+            resolve(img);
+          } else {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(img);
+          }
+        });
+      });
+      
+      await Promise.all(imagePromises);
+      
+      // Capture with html2canvas (object-fit fix version)
+      const html2canvas = require('html2canvas-objectfit-fix');
+        const canvas = await html2canvas(tempContainer, {
+          width: 512,
+          height: 694,
+          scale: 6, // Increased for higher quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: postcardBackgroundColor,
+          logging: false
+        });
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log('✅ [DOWNLOAD] Pixel-perfect postcard generated');
+      return dataUrl;
       
     } catch (error) {
       console.error('❌ [DOWNLOAD] Error generating postcard:', error);
@@ -119,176 +227,138 @@ const PostCardPage: React.FC = () => {
     }
   };
 
+  // Helper function to get text width
+  const getTextWidth = (text: string, fontSize: number) => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return 0;
+    
+    context.font = `${fontSize}px SF Pro Display, -apple-system, BlinkMacSystemFont, Arial, sans-serif`;
+    return context.measureText(text).width;
+  };
+
   const generateEmailFriendlyImage = async (): Promise<string> => {
-    console.log('🚀 [EMAIL] Generating email postcard via backend API...');
+    console.log('🚀 [EMAIL] Generating pixel-perfect email postcard...');
     
     try {
-      // Step 1: Create perfect HTML for the postcard
-      const postcardHTML = createPerfectPostcardHTML();
+      // Get the preview elements
+      const frontSide = document.querySelector('.front-side') as HTMLElement;
+      const backSide = document.querySelector('.back-side') as HTMLElement;
       
-      // Step 2: Send to backend for perfect rendering
-      const response = await fetch('http://localhost:3002/api/generate-postcard', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          htmlContent: postcardHTML,
-          width: 512, // Match exact postcard dimensions
-          height: 694, // Match exact postcard dimensions
-          format: 'jpeg',
-          quality: 95
-        })
-      });
+      if (!frontSide || !backSide) {
+        throw new Error('Preview elements not found');
+      }
+
+      // Create a temporary container
+      const tempContainer = document.createElement('div');
+      tempContainer.style.cssText = `
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        width: 512px;
+        height: 694px;
+        background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      `;
       
-      if (!response.ok) {
-        throw new Error(`Backend error: ${response.status}`);
+      // Clone the elements
+      const frontClone = frontSide.cloneNode(true) as HTMLElement;
+      const backClone = backSide.cloneNode(true) as HTMLElement;
+      
+      // Style the clones
+      frontClone.style.cssText = `
+        width: 100%;
+        height: 347px;
+        background: ${postcardBackgroundColor};
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      `;
+      
+      backClone.style.cssText = `
+        width: 100%;
+        height: 347px;
+        background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      `;
+      
+      // Ensure images have proper object-fit styling (now supported by fixed version)
+      const backImage = backClone.querySelector('.postcard-photo') as HTMLImageElement;
+      if (backImage) {
+        backImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+        `;
       }
       
-      // Step 3: Convert response to data URL
-      const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
+      // Ensure stamp image has proper object-fit styling
+      const stampImage = frontClone.querySelector('.stamp-preview img') as HTMLImageElement;
+      if (stampImage) {
+        stampImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 8px;
+        `;
+      }
       
-      console.log('✅ [EMAIL] Perfect postcard generated via backend API');
-      return imageUrl;
+      // Append to temp container
+      tempContainer.appendChild(frontClone);
+      tempContainer.appendChild(backClone);
+      document.body.appendChild(tempContainer);
+      
+      // Wait for images to load
+      const images = tempContainer.querySelectorAll('img');
+      const imagePromises = Array.from(images).map(img => {
+        return new Promise((resolve) => {
+          if (img.complete) {
+            resolve(img);
+          } else {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(img);
+          }
+        });
+      });
+      
+      await Promise.all(imagePromises);
+      
+      // Capture with html2canvas (object-fit fix version)
+      const html2canvas = require('html2canvas-objectfit-fix');
+        const canvas = await html2canvas(tempContainer, {
+          width: 512,
+          height: 694,
+          scale: 4, // Increased for higher quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: postcardBackgroundColor,
+          logging: false
+        });
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('✅ [EMAIL] Pixel-perfect email postcard generated');
+      return dataUrl;
       
     } catch (error) {
-      console.error('❌ [EMAIL] Error generating postcard:', error);
+      console.error('❌ [EMAIL] Error generating email postcard:', error);
       throw error;
     }
   };
 
-  // Create perfect HTML for the postcard
-  const createPerfectPostcardHTML = (): string => {
-    // Get all the CSS from your stylesheet
-    const allStyles = Array.from(document.styleSheets)
-      .map(sheet => {
-        try {
-          return Array.from(sheet.cssRules)
-            .map(rule => rule.cssText)
-            .join('\n');
-        } catch (e) {
-          return '';
-        }
-      })
-      .join('\n');
-    
-    // Get the actual content from your postcard preview
-    const frontSideElement = document.querySelector('.front-side');
-    const backSideElement = document.querySelector('.back-side');
-    
-    if (!frontSideElement || !backSideElement) {
-      throw new Error('Postcard preview elements not found');
-    }
-    
-    // Clone the elements to get their current state
-    const frontSideClone = frontSideElement.cloneNode(true) as HTMLElement;
-    const backSideClone = backSideElement.cloneNode(true) as HTMLElement;
-    
-    // Ensure all images are loaded
-    const frontImages = Array.from(frontSideClone.querySelectorAll('img'));
-    const backImages = Array.from(backSideClone.querySelectorAll('img'));
-    const allImages = [...frontImages, ...backImages];
-    allImages.forEach(img => {
-      if (img.src && !img.src.startsWith('data:')) {
-        img.src = img.src; // Force reload
-      }
-    });
-    
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>PostCard</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-            
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            body {
-              font-family: 'Inter', sans-serif;
-              background: #FFFFFF;
-              margin: 0;
-              padding: 0;
-              width: 512px;
-              height: 694px;
-              overflow: hidden;
-            }
-            
-            .postcard-container {
-              width: 512px;
-              height: 694px;
-              background: ${postcardBackgroundColor};
-              border-radius: 0px; /* Sharp corners for final postcard */
-              box-shadow: 4px 4px 18px rgba(0, 0, 0, 0.25);
-              overflow: hidden;
-              position: relative;
-              margin: 0;
-              padding: 0;
-              line-height: 0;
-              font-size: 0;
-            }
-            
-            .front-side {
-              width: 100%;
-              height: 347px;
-              position: relative;
-              background: ${postcardBackgroundColor};
-              margin: 0;
-              padding: 0;
-              top: 0;
-              left: 0;
-              right: 0;
-              border-radius: 20px 20px 0 0; /* Top corners rounded, bottom corners 0px */
-            }
-            
-            .back-side {
-              width: 100%;
-              height: 347px;
-              position: relative;
-              background: ${postcardBackgroundColor};
-              margin: 0;
-              padding: 0;
-              top: 0;
-              left: 0;
-              right: 0;
-              margin-top: 0;
-              border-radius: 0 0 20px 20px; /* Top corners 0px, bottom corners rounded */
-            }
-            
-            /* All your CSS styles */
-            ${allStyles}
-          </style>
-        </head>
-        <body>
-          <div class="postcard-container">
-            <div class="front-side">
-              ${frontSideClone.outerHTML}
-            </div>
-            <div class="back-side">
-              ${backSideClone.outerHTML}
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-  };
-
-  // REMOVED: All Canvas drawing functions - now using Browserless.io for perfect screenshots
-
-  // REMOVED: All unused helper functions - now using direct capture approach
-
-  // REMOVED: Unused function - dom-to-image handles optimization automatically
-
-  // REMOVED: Old Canvas drawing functions - now using direct HTML screenshot
-
-  // REMOVED: All remaining Canvas drawing functions - now using direct HTML screenshot
+  // HTML2Canvas captures the exact preview - perfect quality guaranteed!
 
   const sendPostcardEmail = async (postcardImage: string): Promise<void> => {
     try {
@@ -414,6 +484,16 @@ const PostCardPage: React.FC = () => {
 
   return (
     <div className="postcard-page">
+      {/* Download button in top right corner */}
+      <button
+        onClick={handleDownload}
+        disabled={!isFormValid}
+        className="download-icon-button"
+        title="Download Preview"
+      >
+        <img src="/download-icon.svg" alt="Download" />
+      </button>
+      
       <div className="postcard-container">
         {/* Left Column - Input Form */}
         <div className="input-column">

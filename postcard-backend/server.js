@@ -171,6 +171,9 @@ app.post('/api/generate-postcard', async (req, res) => {
   }
 });
 
+// Satori postcard generation endpoint
+app.post('/api/generate-postcard-satori', require('./api/generate-postcard-satori'));
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Postcard backend is running' });

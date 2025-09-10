@@ -4,6 +4,45 @@
   padding: 20px 20px 0px 20px;
   font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
+  /* Force desktop mode on all devices */
+  min-width: 1200px;
+  overflow-x: auto;
+}
+
+/* Download button in top right corner */
+.download-icon-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: all 0.2s ease;
+}
+
+.download-icon-button:hover {
+  background-color: #333;
+  transform: translateY(-1px);
+}
+
+.download-icon-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.download-icon-button img {
+  width: 24px;
+  height: 24px;
+  /* No filter needed since your icon is already white */
 }
 
 .postcard-page::before {
@@ -20,12 +59,12 @@
 }
 
 /* Vertical separator line between form and postcard preview */
-.postcard-page::after {
+.postcard-container::before {
   content: '';
-  position: fixed;
+  position: absolute;
   left: 50%;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   height: 700px;
   width: 1px;
   background-color: rgba(170, 170, 170, 0.3);
@@ -416,7 +455,7 @@
   flex: 1;
   font-size: 1rem;
   line-height: 1.6;
-  color: #555;
+  color: #000000;
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
@@ -483,7 +522,7 @@
 
 .stamp-preview {
   width: 80px;
-  height: 80px;
+  height: 100px; /* Increased height to reduce stretching */
   border-radius: 8px; /* Changed from 4px to 8px rounded corners */
   display: flex;
   align-items: center;
@@ -498,14 +537,14 @@
 
 .stamp-preview img {
   width: 80px; /* Full stamp size */
-  height: 80px;
+  height: 100px; /* Increased height to reduce stretching */
   border-radius: 8px; /* Changed from 4px to 8px rounded corners */
   object-fit: cover; /* Maintain aspect ratio without distortion */
 }
 
 .stamp-image {
   width: 80px;
-  height: 80px;
+  height: 100px; /* Increased height to reduce stretching */
   border-radius: 8px;
   object-fit: cover;
   object-position: center;
@@ -520,8 +559,8 @@
 
 .signature-display {
   position: absolute;
-  bottom: 20px;
-  left: calc(50% + 33px); /* Exactly 33px from vertical line (50% + 33px) */
+  bottom: 10px; /* Moved down from 20px to 10px */
+  left: calc(50% + 20px); /* Moved left from 33px to 20px */
   font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   align-items: center;
@@ -555,39 +594,7 @@
   text-align: center;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .postcard-container {
-    flex-direction: column;
-    height: auto;
-  }
-  
-  .preview-column {
-    order: -1;
-  }
-  
-  .postcard-frame {
-    width: 100%;
-    max-width: 573px;
-    height: auto;
-    aspect-ratio: 573/405;
-  }
-}
-
-@media (max-width: 768px) {
-  .postcard-container {
-    gap: 20px;
-  }
-  
-  .input-column,
-  .preview-column {
-    padding: 20px;
-  }
-  
-  .header h1 {
-    font-size: 2rem;
-  }
-}
+/* Responsive Design - DISABLED - Force desktop mode on all devices */
 
 /* Color Picker Styles */
 .color-picker-container {

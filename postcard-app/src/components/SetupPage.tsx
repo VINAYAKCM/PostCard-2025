@@ -42,8 +42,8 @@ const SetupPage: React.FC = () => {
   return (
     <div className="setup-page">
       <div className="setup-container">
-        <h1>Postcards, but reimagined.</h1>
-        <p className="subtitle">"Your words deserve more than a<br />text bubble."</p>
+        <h1>Personal messages, beautifully<br/> delivered.</h1>
+        <p className="subtitle">Made for meaningful connections.</p>
         
         <div className="separator-line"></div>
         
@@ -61,7 +61,7 @@ const SetupPage: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="from-email">Your email address</label>
+            <label htmlFor="from-email">Where should we say this is from?</label>
             <input
               type="email"
               id="from-email"
