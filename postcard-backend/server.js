@@ -50,6 +50,19 @@ app.use(express.static('public'));
 
 // Note: Postcard generation moved to frontend using html2canvas
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'PostCard Backend API is running!', 
+    endpoints: [
+      'GET /api/health - Health check',
+      'GET /api/db-test - Database test',
+      'POST /api/check-email-limit - Check email limits',
+      'POST /api/generate-postcard-satori - Generate postcard (Satori)'
+    ]
+  });
+});
+
 // Satori postcard generation endpoint
 app.post('/api/generate-postcard-satori', require('./api/generate-postcard-satori'));
 
