@@ -207,6 +207,7 @@ app.get('/api/db-test', async (req, res) => {
 // Start server
 app.listen(PORT, async () => {
   console.log(`🚀 Postcard backend server running on port ${PORT}`);
+  console.log(`🔧 Using MongoDB URI: ${MONGODB_URI ? 'Environment variable set' : 'Using fallback'}`);
   await connectToMongoDB();
   
   // Initialize browser in background (don't wait for it)
