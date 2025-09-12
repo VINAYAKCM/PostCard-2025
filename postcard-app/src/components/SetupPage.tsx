@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { getApiUrl } from '../config/apiConfig';
 import './SetupPage.css';
 
 const SetupPage: React.FC = () => {
@@ -8,9 +9,72 @@ const SetupPage: React.FC = () => {
   const [fromEmail, setFromEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { setUserData } = useUser();
+  const { setUserData, emailCheckResult, setEmailCheckResult } = useUser();
   const navigate = useNavigate();
+
+  // Email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Check email status when email changes
+  const checkEmailStatus = async (email: string) => {
+    // Clear previous errors
+    setEmailError(null);
+    
+    if (!email) {
+      setEmailCheckResult(null);
+      return;
+    }
+
+    // Check email format first
+    if (!emailRegex.test(email)) {
+      setEmailError('Invalid email format');
+      setEmailCheckResult(null);
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    try {
+      const response = await fetch(getApiUrl('/api/check-email-limit'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setEmailCheckResult(result);
+        setEmailError(null);
+      } else {
+        console.error('Failed to check email status');
+        setEmailError('Could not check email');
+        setEmailCheckResult(null);
+      }
+    } catch (error) {
+      console.error('Error checking email status:', error);
+      setEmailError('Could not check email');
+      setEmailCheckResult(null);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  // Debounced email check
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (fromEmail.trim()) {
+        checkEmailStatus(fromEmail.trim());
+      } else {
+        setEmailCheckResult(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [fromEmail]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -26,7 +90,7 @@ const SetupPage: React.FC = () => {
   };
 
   const handleSetup = () => {
-    if (name.trim() && fromEmail.trim() && profileImage) {
+    if (name.trim() && fromEmail.trim() && profileImage && emailCheckResult?.allowed) {
       setUserData({
         name: name.trim(),
         email: fromEmail.trim(),
@@ -37,7 +101,7 @@ const SetupPage: React.FC = () => {
     }
   };
 
-  const isFormValid = name.trim() && fromEmail.trim() && profileImage;
+  const isFormValid = name.trim() && fromEmail.trim() && profileImage && emailCheckResult?.allowed && !emailError;
 
   return (
     <div className="setup-page">
@@ -70,6 +134,31 @@ const SetupPage: React.FC = () => {
               placeholder="Your email address"
               className="setup-input"
             />
+            {emailCheckResult && (
+              <div className={`email-status-message ${
+                emailCheckResult.isCreator ? 'vip' : 
+                emailCheckResult.hasUsedPostcard ? 'error' : 'normal'
+              }`}>
+                {emailCheckResult.isCreator && (
+                  <img 
+                    src="/unlock-icon.svg" 
+                    alt="Lock icon" 
+                    className="icon"
+                  />
+                )}
+                <span className="text">{emailCheckResult.message}</span>
+              </div>
+            )}
+            {isCheckingEmail && (
+              <div className="email-status-message normal">
+                <span className="text">Checking email...</span>
+              </div>
+            )}
+            {emailError && (
+              <div className="email-status-message error">
+                <span className="text">{emailError}</span>
+              </div>
+            )}
           </div>
 
           <div className="form-group">

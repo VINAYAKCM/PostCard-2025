@@ -498,7 +498,7 @@ const PostCardPage: React.FC = () => {
         {/* Left Column - Input Form */}
         <div className="input-column">
           <div className="header">
-            <h1>Bringing back Postcards,<br />but online.</h1>
+            <h1>Send a postcard to someone special.</h1>
           </div>
           
           <div className="input-form">

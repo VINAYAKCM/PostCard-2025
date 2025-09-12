@@ -12,11 +12,20 @@ interface UserData {
   profileImage: string | null;
 }
 
+interface EmailCheckResult {
+  allowed: boolean;
+  remaining: number | 'unlimited';
+  isCreator: boolean;
+  hasUsedPostcard: boolean;
+  message: string;
+}
+
 function App() {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [emailCheckResult, setEmailCheckResult] = useState<EmailCheckResult | null>(null);
 
   return (
-    <UserContext.Provider value={{ userData, setUserData }}>
+    <UserContext.Provider value={{ userData, setUserData, emailCheckResult, setEmailCheckResult }}>
       <Router>
         <div className="App">
           <Routes>

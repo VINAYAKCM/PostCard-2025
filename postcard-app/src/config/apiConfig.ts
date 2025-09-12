@@ -5,7 +5,7 @@ export const apiConfig = {
   // Backend API base URL
   baseUrl: isDevelopment 
     ? 'http://localhost:3002' 
-    : 'https://YOUR-BACKEND-URL.vercel.app', // Replace with your actual Vercel URL after deployment
+    : '', // Use relative URLs in production (Vercel will handle routing)
   
   // API endpoints
   endpoints: {

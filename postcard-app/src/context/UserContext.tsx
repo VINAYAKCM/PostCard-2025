@@ -7,9 +7,19 @@ interface UserData {
   profileImage: string | null;
 }
 
+interface EmailCheckResult {
+  allowed: boolean;
+  remaining: number | 'unlimited';
+  isCreator: boolean;
+  hasUsedPostcard: boolean;
+  message: string;
+}
+
 interface UserContextType {
   userData: UserData | null;
   setUserData: React.Dispatch<React.SetStateAction<UserData | null>>;
+  emailCheckResult: EmailCheckResult | null;
+  setEmailCheckResult: React.Dispatch<React.SetStateAction<EmailCheckResult | null>>;
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);

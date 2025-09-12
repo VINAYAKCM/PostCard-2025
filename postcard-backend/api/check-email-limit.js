@@ -60,38 +60,43 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
     
-    // Check if it's a creator email
+    // Check if it's a creator email (VIP users)
     if (CREATOR_EMAILS.includes(email)) {
       return res.json({ 
         allowed: true, 
         remaining: 'unlimited',
-        isCreator: true 
+        isCreator: true,
+        hasUsedPostcard: false,
+        message: 'Executive access granted.'
       });
     }
     
-    // Check daily limit for regular users
+    // Check if normal user has already used their 1 postcard
     const db = await connectToMongoDB();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
     
     const count = await db.collection('postcards').countDocuments({
-      senderEmail: email,
-      createdAt: {
-        $gte: today,
-        $lt: tomorrow
-      }
+      senderEmail: email
     });
     
-    const remaining = Math.max(0, 3 - count);
+    const hasUsedPostcard = count > 0;
     
-    res.json({ 
-      allowed: remaining > 0, 
-      remaining,
-      isCreator: false 
-    });
+    if (hasUsedPostcard) {
+      return res.json({ 
+        allowed: false, 
+        remaining: 0,
+        isCreator: false,
+        hasUsedPostcard: true,
+        message: 'You have already reached your limit.'
+      });
+    } else {
+      return res.json({ 
+        allowed: true, 
+        remaining: 1,
+        isCreator: false,
+        hasUsedPostcard: false,
+        message: 'One postcard trial available.'
+      });
+    }
     
   } catch (error) {
     console.error('❌ Error checking email limit:', error);
