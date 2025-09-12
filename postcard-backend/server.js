@@ -4,7 +4,7 @@ const path = require('path');
 const { MongoClient } = require('mongodb');
 
 const app = express();
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;
 
 // MongoDB connection string
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cmvinayak04:rhEpD4YY0WcEnXDC@cluster0.060pymq.mongodb.net/postcard-app?retryWrites=true&w=majority&ssl=true&tls=true';
