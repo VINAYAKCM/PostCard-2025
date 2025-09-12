@@ -52,8 +52,11 @@ app.use(express.static('public'));
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ 
+  console.log('🔍 Root endpoint hit:', req.url);
+  res.status(200).json({ 
     message: 'PostCard Backend API is running!', 
+    status: 'OK',
+    timestamp: new Date().toISOString(),
     endpoints: [
       'GET /api/health - Health check',
       'GET /api/db-test - Database test',
@@ -94,6 +97,17 @@ app.get('/api/db-test', async (req, res) => {
     console.error('❌ Database test error:', error);
     res.status(500).json({ error: 'Database test failed', details: error.message });
   }
+});
+
+// Catch-all route for debugging
+app.use('*', (req, res) => {
+  console.log('🔍 Catch-all route hit:', req.method, req.originalUrl);
+  res.status(404).json({ 
+    error: 'Route not found', 
+    method: req.method, 
+    url: req.originalUrl,
+    availableRoutes: ['GET /', 'GET /api/health', 'GET /api/db-test', 'POST /api/check-email-limit', 'POST /api/generate-postcard-satori']
+  });
 });
 
 // Start server
