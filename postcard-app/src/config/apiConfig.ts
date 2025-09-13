@@ -5,7 +5,7 @@ export const apiConfig = {
   // Backend API base URL
   baseUrl: isDevelopment 
     ? 'http://localhost:3002' 
-    : process.env.REACT_APP_BACKEND_URL || 'https://postcard-2025-production.up.railway.app'
+    : process.env.REACT_APP_BACKEND_URL || 'https://postcard-2025-production.up.railway.app',
   
   // API endpoints
   endpoints: {
