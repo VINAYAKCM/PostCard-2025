@@ -23,7 +23,4 @@
       "dest": "postcard-app/build/$1"
     }
   ],
-  "env": {
-    "MONGODB_URI": "@mongodb_uri"
-  }
 }
