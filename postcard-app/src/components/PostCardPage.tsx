@@ -19,6 +19,7 @@ const PostCardPage: React.FC = () => {
   const [postcardBackgroundColor, setPostcardBackgroundColor] = useState('#FFFFFF');
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSent, setIsSent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,16 +88,10 @@ const PostCardPage: React.FC = () => {
       // Send email with postcard attachment
       await sendPostcardEmail(postcardImage);
       
-      alert('Postcard sent successfully! Check your email.');
+      // Show success state
+      setIsSent(true);
       
-      // Reset form
-      setRecipientName('');
-      setHandle('');
-      setSenderEmail('');
-      setMessage('');
-      setPhoto(null);
-      setSignature(null);
-      setPostcardBackgroundColor('#FFFFFF'); // Reset to default color
+      // Don't reset form - let user keep the postcard and download it
     } catch (error) {
       console.error('Error sending postcard:', error);
       alert('Failed to send postcard. Please try again.');
@@ -465,7 +460,6 @@ const PostCardPage: React.FC = () => {
       );
 
       console.log('EmailJS result:', result);
-      alert('Postcard sent successfully! Check your email.');
       console.log('Email sent with Cloudinary link:', imageUrl);
     } catch (error) {
       console.error('Failed to send email:', error);
@@ -634,10 +628,10 @@ const PostCardPage: React.FC = () => {
 
             <button
               onClick={handleSend}
-              disabled={!isFormValid || isSending || isUploading}
+              disabled={!isFormValid || isSending || isUploading || isSent}
               className={`send-button ${isFormValid ? 'active' : 'disabled'}`}
             >
-              {isUploading ? 'Uploading...' : isSending ? 'Sending...' : 'Send'}
+              {isSent ? 'Postcard Sent!' : isSending ? 'Sending...' : 'Send'}
             </button>
 
 
