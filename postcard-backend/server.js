@@ -17,11 +17,15 @@ let db;
 // Install Playwright browsers if not available
 async function installPlaywrightBrowsers() {
   try {
-    console.log('🎭 Checking Playwright browsers...');
+    console.log('🎭 Installing Playwright system dependencies...');
+    execSync('npx playwright install-deps', { stdio: 'inherit' });
+    console.log('✅ Playwright system dependencies installed!');
+    
+    console.log('🎭 Installing Playwright browsers...');
     execSync('npx playwright install chromium', { stdio: 'inherit' });
     console.log('✅ Playwright browsers installed successfully!');
   } catch (error) {
-    console.error('❌ Failed to install Playwright browsers:', error.message);
+    console.error('❌ Failed to install Playwright:', error.message);
     console.log('⚠️  Mobile postcard generation may not work properly');
   }
 }
