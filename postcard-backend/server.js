@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { MongoClient } = require('mongodb');
+const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -12,6 +13,18 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cmvinayak04:rhEpD4
 // MongoDB client
 let dbClient;
 let db;
+
+// Install Playwright browsers if not available
+async function installPlaywrightBrowsers() {
+  try {
+    console.log('🎭 Checking Playwright browsers...');
+    execSync('npx playwright install chromium', { stdio: 'inherit' });
+    console.log('✅ Playwright browsers installed successfully!');
+  } catch (error) {
+    console.error('❌ Failed to install Playwright browsers:', error.message);
+    console.log('⚠️  Mobile postcard generation may not work properly');
+  }
+}
 
 // Connect to MongoDB
 async function connectToMongoDB() {
@@ -119,6 +132,7 @@ app.listen(PORT, async () => {
   console.log(`🚀 Postcard backend server running on port ${PORT}`);
   console.log(`🔧 Using MongoDB URI: ${MONGODB_URI ? 'Environment variable set' : 'Using fallback'}`);
   await connectToMongoDB();
+  await installPlaywrightBrowsers();
   console.log('✅ Backend ready - postcard generation handled by frontend');
 });
 
