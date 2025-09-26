@@ -1,11 +1,29 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import SignatureCanvas from './SignatureCanvas';
 import { UserContext } from '../context/UserContext';
 import emailjs from '@emailjs/browser';
 import { emailConfig } from '../config/emailConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
+import { getApiUrl } from '../config/apiConfig';
 
 import './PostCardPage.css';
+
+// Utility function to determine if a background color is light or dark
+const isLightBackground = (hexColor: string): boolean => {
+  // Remove # if present
+  const hex = hexColor.replace('#', '');
+  
+  // Convert to RGB
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate relative luminance using the standard formula
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return true if light (luminance > 0.5), false if dark
+  return luminance > 0.5;
+};
 
 const PostCardPage: React.FC = () => {
   const userContext = useContext(UserContext);
@@ -20,7 +38,26 @@ const PostCardPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [textColor, setTextColor] = useState('#000000'); // Dynamic text color based on background
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Device detection
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  // Update text color based on background color
+  useEffect(() => {
+    const isLight = isLightBackground(postcardBackgroundColor);
+    setTextColor(isLight ? '#000000' : '#FFFFFF');
+  }, [postcardBackgroundColor]);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -38,8 +75,28 @@ const PostCardPage: React.FC = () => {
     setSignature(signatureData);
   };
 
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const lines = value.split('\n');
+    
+    // Different limits for mobile and desktop
+    if (isMobile) {
+      // Mobile: 3 lines AND 185 characters
+      if (lines.length > 3 || value.length > 185) {
+      return;
+      }
+    } else {
+      // Desktop: 3 lines AND 185 characters (decreased line limit)
+      if (lines.length > 3 || value.length > 185) {
+        return;
+      }
+    }
+    
+    setMessage(value);
+  };
+
   const clearSignature = () => {
-    setSignature(null);
+      setSignature(null);
   };
 
   const handleDownload = async () => {
@@ -49,10 +106,42 @@ const PostCardPage: React.FC = () => {
     }
 
     try {
-      // Generate high-quality postcard image for download
-      console.log('Generating postcard for download...');
-      const postcardImage = await generatePostcardImage();
-      console.log('Postcard generated successfully!');
+      let postcardImage: string;
+      
+      if (isMobile) {
+        // Use backend Playwright generation for mobile
+        console.log('🎭 [MOBILE] Using backend Playwright generation...');
+        const response = await fetch(getApiUrl('/api/generate-postcard'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            recipientName,
+            handle,
+            senderEmail,
+            message,
+            photo,
+            signature,
+            postcardBackgroundColor,
+            userData,
+            isMobile: true
+        })
+      });
+      
+      if (!response.ok) {
+          throw new Error('Failed to generate postcard with Playwright');
+        }
+        
+        const result = await response.json();
+        postcardImage = result.postcardImage;
+        console.log('✅ [MOBILE] Postcard generated with Playwright');
+      } else {
+        // Use frontend html2canvas generation for desktop
+        console.log('🖥️ [DESKTOP] Using frontend html2canvas generation...');
+        postcardImage = await generatePostcardImage();
+        console.log('✅ [DESKTOP] Postcard generated with html2canvas');
+      }
       
       // Create download link
       const link = document.createElement('a');
@@ -78,10 +167,43 @@ const PostCardPage: React.FC = () => {
     setIsSending(true);
     
     try {
-      // Generate email-friendly postcard image (smaller file size)
-      console.log('Starting email-friendly postcard image generation...');
-      const postcardImage = await generateEmailFriendlyImage();
-      console.log('Email-friendly postcard image generated successfully!');
+      let postcardImage: string;
+      
+      if (isMobile) {
+        // Use backend Playwright generation for mobile
+        console.log('🎭 [MOBILE] Using backend Playwright generation for email...');
+        const response = await fetch(getApiUrl('/api/generate-postcard'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            recipientName,
+            handle,
+            senderEmail,
+            message,
+            photo,
+            signature,
+            postcardBackgroundColor,
+            userData,
+            isMobile: true
+        })
+      });
+      
+      if (!response.ok) {
+          throw new Error('Failed to generate postcard with Playwright');
+        }
+        
+        const result = await response.json();
+        postcardImage = result.postcardImage;
+        console.log('✅ [MOBILE] Postcard generated with Playwright for email');
+      } else {
+        // Use frontend html2canvas generation for desktop
+        console.log('🖥️ [DESKTOP] Using frontend html2canvas generation for email...');
+        postcardImage = await generateEmailFriendlyImage();
+        console.log('✅ [DESKTOP] Postcard generated with html2canvas for email');
+      }
+      
       console.log('Image data length:', postcardImage.length);
       console.log('Image data preview:', postcardImage.substring(0, 100) + '...');
       
@@ -105,13 +227,18 @@ const PostCardPage: React.FC = () => {
     console.log('🚀 [DOWNLOAD] Generating pixel-perfect postcard...');
     
     try {
-      // Get the preview elements
+      // Get the preview elements - desktop only (mobile will use backend Playwright)
       const frontSide = document.querySelector('.front-side') as HTMLElement;
       const backSide = document.querySelector('.back-side') as HTMLElement;
       
       if (!frontSide || !backSide) {
+        console.error('❌ [ERROR] Preview elements not found');
         throw new Error('Preview elements not found');
       }
+
+      // Check if signature exists in original element
+      const originalSignature = frontSide.querySelector('.signature-display') as HTMLElement;
+      console.log('🔍 [DEBUG] Original signature exists:', !!originalSignature);
 
       // Create a temporary container
       const tempContainer = document.createElement('div');
@@ -181,6 +308,80 @@ const PostCardPage: React.FC = () => {
       tempContainer.appendChild(frontClone);
       tempContainer.appendChild(backClone);
       document.body.appendChild(tempContainer);
+      
+      // Apply dynamic contrast to cloned elements
+      const isLight = isLightBackground(postcardBackgroundColor);
+      const textColor = isLight ? '#000000' : '#FFFFFF';
+      const separatorColor = isLight ? 'rgba(170, 170, 170, 0.16)' : 'rgba(255, 255, 255, 0.3)';
+      
+      // Apply text color to cloned elements
+      const greeting = frontClone.querySelector('.greeting') as HTMLElement;
+      const message = frontClone.querySelector('.message') as HTMLElement;
+      const closing = frontClone.querySelector('.closing') as HTMLElement;
+      const separatorLine = frontClone.querySelector('.separator-line') as HTMLElement;
+      const signatureDisplay = frontClone.querySelector('.signature-display') as HTMLElement;
+      
+      console.log('🔍 [DEBUG] Cloned elements found:', {
+        greeting: !!greeting,
+        message: !!message,
+        closing: !!closing,
+        separatorLine: !!separatorLine,
+        signatureDisplay: !!signatureDisplay,
+        textColor,
+        isLight,
+        backgroundColor: postcardBackgroundColor
+      });
+      
+      if (greeting) greeting.style.color = textColor;
+      if (message) message.style.color = textColor;
+      if (closing) closing.style.color = textColor;
+      if (separatorLine) separatorLine.style.backgroundColor = separatorColor;
+      if (signatureDisplay) {
+        // Apply filter to the signature image, not the container
+        const signatureImage = signatureDisplay.querySelector('.signature-image') as HTMLImageElement;
+        if (signatureImage) {
+          if (textColor !== '#000000') {
+            // Create a canvas to invert the signature image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              canvas.width = signatureImage.naturalWidth || signatureImage.width;
+              canvas.height = signatureImage.naturalHeight || signatureImage.height;
+              
+              // Draw the image
+              ctx.drawImage(signatureImage, 0, 0);
+              
+              // Get image data and invert it
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              
+              for (let i = 0; i < data.length; i += 4) {
+                // Invert RGB values
+                data[i] = 255 - data[i];     // Red
+                data[i + 1] = 255 - data[i + 1]; // Green
+                data[i + 2] = 255 - data[i + 2]; // Blue
+                // Alpha stays the same
+              }
+              
+              // Put the inverted data back
+              ctx.putImageData(imageData, 0, 0);
+              
+              // Replace the image source
+              signatureImage.src = canvas.toDataURL();
+            }
+          }
+          
+          console.log('✅ [DEBUG] Signature IMAGE processed:', {
+            textColor,
+            method: textColor === '#000000' ? 'original' : 'canvas-inverted',
+            element: signatureImage
+          });
+        } else {
+          console.log('❌ [DEBUG] Signature IMAGE not found inside container');
+        }
+      } else {
+        console.log('❌ [DEBUG] Signature element NOT FOUND in cloned elements');
+      }
       
       // Wait for images to load
       const images = tempContainer.querySelectorAll('img');
@@ -250,12 +451,12 @@ const PostCardPage: React.FC = () => {
         position: absolute;
         top: -9999px;
         left: -9999px;
-        width: 512px;
-        height: 694px;
-        background: ${postcardBackgroundColor};
+              width: 512px;
+              height: 694px;
+              background: ${postcardBackgroundColor};
         border-radius: 0px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
+              overflow: hidden;
         display: flex;
         flex-direction: column;
       `;
@@ -266,22 +467,22 @@ const PostCardPage: React.FC = () => {
       
       // Style the clones
       frontClone.style.cssText = `
-        width: 100%;
-        height: 347px;
-        background: ${postcardBackgroundColor};
+              width: 100%;
+              height: 347px;
+              background: ${postcardBackgroundColor};
         border-radius: 20px 20px 0 0;
-        margin: 0;
-        padding: 0;
+              margin: 0;
+              padding: 0;
         position: relative;
       `;
       
       backClone.style.cssText = `
-        width: 100%;
-        height: 347px;
-        background: ${postcardBackgroundColor};
+              width: 100%;
+              height: 347px;
+              background: ${postcardBackgroundColor};
         border-radius: 0px;
-        margin: 0;
-        padding: 0;
+              margin: 0;
+              padding: 0;
         position: relative;
       `;
       
@@ -312,6 +513,80 @@ const PostCardPage: React.FC = () => {
       tempContainer.appendChild(frontClone);
       tempContainer.appendChild(backClone);
       document.body.appendChild(tempContainer);
+      
+      // Apply dynamic contrast to cloned elements
+      const isLight = isLightBackground(postcardBackgroundColor);
+      const textColor = isLight ? '#000000' : '#FFFFFF';
+      const separatorColor = isLight ? 'rgba(170, 170, 170, 0.16)' : 'rgba(255, 255, 255, 0.3)';
+      
+      // Apply text color to cloned elements
+      const greeting = frontClone.querySelector('.greeting') as HTMLElement;
+      const message = frontClone.querySelector('.message') as HTMLElement;
+      const closing = frontClone.querySelector('.closing') as HTMLElement;
+      const separatorLine = frontClone.querySelector('.separator-line') as HTMLElement;
+      const signatureDisplay = frontClone.querySelector('.signature-display') as HTMLElement;
+      
+      console.log('🔍 [DEBUG] Cloned elements found:', {
+        greeting: !!greeting,
+        message: !!message,
+        closing: !!closing,
+        separatorLine: !!separatorLine,
+        signatureDisplay: !!signatureDisplay,
+        textColor,
+        isLight,
+        backgroundColor: postcardBackgroundColor
+      });
+      
+      if (greeting) greeting.style.color = textColor;
+      if (message) message.style.color = textColor;
+      if (closing) closing.style.color = textColor;
+      if (separatorLine) separatorLine.style.backgroundColor = separatorColor;
+      if (signatureDisplay) {
+        // Apply filter to the signature image, not the container
+        const signatureImage = signatureDisplay.querySelector('.signature-image') as HTMLImageElement;
+        if (signatureImage) {
+          if (textColor !== '#000000') {
+            // Create a canvas to invert the signature image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              canvas.width = signatureImage.naturalWidth || signatureImage.width;
+              canvas.height = signatureImage.naturalHeight || signatureImage.height;
+              
+              // Draw the image
+              ctx.drawImage(signatureImage, 0, 0);
+              
+              // Get image data and invert it
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              
+              for (let i = 0; i < data.length; i += 4) {
+                // Invert RGB values
+                data[i] = 255 - data[i];     // Red
+                data[i + 1] = 255 - data[i + 1]; // Green
+                data[i + 2] = 255 - data[i + 2]; // Blue
+                // Alpha stays the same
+              }
+              
+              // Put the inverted data back
+              ctx.putImageData(imageData, 0, 0);
+              
+              // Replace the image source
+              signatureImage.src = canvas.toDataURL();
+            }
+          }
+          
+          console.log('✅ [DEBUG] Signature IMAGE processed:', {
+            textColor,
+            method: textColor === '#000000' ? 'original' : 'canvas-inverted',
+            element: signatureImage
+          });
+        } else {
+          console.log('❌ [DEBUG] Signature IMAGE not found inside container');
+        }
+      } else {
+        console.log('❌ [DEBUG] Signature element NOT FOUND in cloned elements');
+      }
       
       // Wait for images to load
       const images = tempContainer.querySelectorAll('img');
@@ -478,24 +753,100 @@ const PostCardPage: React.FC = () => {
 
   return (
     <div className="postcard-page">
-      {/* Download button in top right corner */}
-      <button
-        onClick={handleDownload}
-        disabled={!isFormValid}
-        className="download-icon-button"
-        title="Download Preview"
-      >
-        <img src="/download-icon.svg" alt="Download" />
-      </button>
-      
-      <div className="postcard-container">
-        {/* Left Column - Input Form */}
-        <div className="input-column">
-          <div className="header">
+      {isMobile ? (
+        // Mobile Layout
+        <div className="mobile-layout">
+          {/* Download button in top right corner */}
+          <button
+            onClick={handleDownload}
+            disabled={!isFormValid || !isSent}
+            className="download-icon-button mobile"
+            title="Download Preview"
+          >
+            <img src="/download-icon.svg" alt="Download" />
+          </button>
+          
+          {/* Title */}
+          <div className="mobile-header">
             <h1>Send a postcard to someone special.</h1>
           </div>
           
-          <div className="input-form">
+          {/* Break line */}
+          <div className="mobile-break-line-top"></div>
+          
+          {/* Postcard Preview */}
+          <div className="mobile-postcard-preview">
+            {/* Front Side Postcard */}
+            <div className="postcard-frame front-side" style={{ backgroundColor: postcardBackgroundColor }}>
+              <div className="postcard-content">
+                <div className="left-content">
+                  <div className="greeting" style={{ color: textColor }}>Hey {recipientName ? `${recipientName},` : ','}</div>
+                  <div className="message" style={{ color: textColor }}>{message || ''}</div>
+                  <div className="closing" style={{ color: textColor }}>
+                    Sincerely, 
+                    {userData?.profileImage ? (
+                      <img 
+                        src={userData.profileImage} 
+                        alt="Profile" 
+                        className="closing-profile-image"
+                      />
+                    ) : (
+                      <span className="user-icon">👤</span>
+                    )}
+                    @{handle || 'handle'}
+                  </div>
+                </div>
+                <div className="right-content">
+                  <div className="stamp-placeholder">
+                    <div className="stamp-preview">
+                      {userData?.profileImage ? (
+                        <img src={userData.profileImage} alt="Profile" className="stamp-image" />
+                      ) : (
+                        <div className="stamp-placeholder-text">Profile Image</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {signature && (
+                  <div className="signature-display" style={{ filter: textColor === '#000000' ? 'none' : 'brightness(0) invert(1)' }}>
+                    <img src={signature} alt="Signature" className="signature-image" />
+                  </div>
+                )}
+              </div>
+              {/* Dynamic separator line */}
+              <div 
+                className="separator-line" 
+                style={{ 
+                  backgroundColor: textColor === '#000000' ? 'rgba(170, 170, 170, 0.16)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              ></div>
+            </div>
+
+            {/* Back Side Postcard */}
+            <div className="postcard-frame back-side" style={{ backgroundColor: postcardBackgroundColor }}>
+              <div className="photo-container">
+                {photo ? (
+                  <img src={photo} alt="Postcard" className="postcard-photo" />
+                ) : (
+                  <div className="photo-placeholder">
+                    <span>Your photo will appear here</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Form Title */}
+          <div className="mobile-form-title">
+            {/* <h2>Create your postcard here.</h2> */}
+          </div>
+          
+          {/* Break line */}
+          <div className="mobile-break-line"></div>
+          
+          
+          {/* Form Input */}
+          <div className="mobile-form">
             {/* Name and Handle Row */}
             <div className="name-handle-row">
               <div className="form-group">
@@ -507,6 +858,7 @@ const PostCardPage: React.FC = () => {
                   placeholder="Name"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
+                  maxLength={10}
                   required
                 />
               </div>
@@ -520,6 +872,7 @@ const PostCardPage: React.FC = () => {
                   placeholder="Handle"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
+                  maxLength={10}
                   required
                 />
               </div>
@@ -547,11 +900,11 @@ const PostCardPage: React.FC = () => {
                 className="form-textarea"
                 placeholder="Message"
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                maxLength={200}
+                onChange={handleMessageChange}
+                maxLength={185}
                 required
               />
-              <div className="char-count">{message.length}/200</div>
+              <div className="char-count">{message.length}/185</div>
             </div>
 
             {/* Photo and Signature Row */}
@@ -581,7 +934,166 @@ const PostCardPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="signature">How do you want to sign it?</label>
+                <label htmlFor="signature">Sign here</label>
+                <div className="signature-canvas">
+                  <SignatureCanvas onSave={handleSignatureSave} />
+                  {!signature && (
+                    <div className="signature-placeholder">
+                      <span>Signature</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="clear-signature"
+                    onClick={() => {
+                      clearSignature();
+                      const signatureCanvas = document.querySelector('.signature-canvas');
+                      if (signatureCanvas) {
+                        const canvasClearButton = signatureCanvas.querySelector('button');
+                        if (canvasClearButton) {
+                          canvasClearButton.click();
+                        }
+                      }
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Color Picker Row */}
+            <div className="form-group">
+              <label htmlFor="postcard-color">Choose your postcard color:</label>
+              <div className="color-picker-container">
+                <input
+                  type="color"
+                  id="postcard-color"
+                  value={postcardBackgroundColor}
+                  onChange={(e) => setPostcardBackgroundColor(e.target.value)}
+                  className="color-picker"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSend}
+              disabled={!isFormValid || isSending || isUploading || isSent}
+              className={`send-button ${isFormValid ? 'active' : 'disabled'}`}
+            >
+              {isSent ? 'Postcard Sent!' : isSending ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        // Desktop Layout
+        <div className="desktop-layout">
+          {/* Download button in top right corner */}
+          <button
+            onClick={handleDownload}
+            disabled={!isFormValid || !isSent}
+            className="download-icon-button"
+            title="Download Preview"
+          >
+            <img src="/download-icon.svg" alt="Download" />
+          </button>
+          
+      <div className="postcard-container">
+        {/* Left Column - Input Form */}
+        <div className="input-column">
+          <div className="header">
+            <h1>Send a postcard to someone special.</h1>
+          </div>
+          
+          <div className="input-form">
+            {/* Name and Handle Row */}
+            <div className="name-handle-row">
+              <div className="form-group">
+                <label htmlFor="recipient-name">Who's getting this postcard?</label>
+                <input
+                  type="text"
+                  id="recipient-name"
+                  className="form-input"
+                  placeholder="Name"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  maxLength={10}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="handle">Got your handle? (eg: cmv01)</label>
+                <input
+                  type="text"
+                  id="handle"
+                  className="form-input"
+                  placeholder="Handle"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  maxLength={10}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="form-group">
+              <label htmlFor="sender-email">Where should I drop it off?</label>
+              <input
+                type="email"
+                id="sender-email"
+                className="form-input"
+                placeholder="Email address"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Message */}
+            <div className="form-group">
+              <label htmlFor="message">What do you wanna tell them?</label>
+              <textarea
+                id="message"
+                className="form-textarea"
+                placeholder="Message"
+                value={message}
+                onChange={handleMessageChange}
+                maxLength={185}
+                required
+              />
+              <div className="char-count">{message.length}/185</div>
+            </div>
+
+            {/* Photo and Signature Row */}
+            <div className="photo-signature-row">
+              <div className="form-group">
+                <label htmlFor="photo">Photo</label>
+                <div 
+                  className="photo-upload-area"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {photo ? (
+                    <img src={photo} alt="Selected photo" className="photo-preview" />
+                  ) : (
+                    <div className="upload-placeholder">
+                      <span>Add a picture</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  id="photo"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="signature">Sign here</label>
                 <div className="signature-canvas">
                   <SignatureCanvas onSave={handleSignatureSave} />
                   {!signature && (
@@ -644,9 +1156,9 @@ const PostCardPage: React.FC = () => {
           <div className="postcard-frame front-side" style={{ backgroundColor: postcardBackgroundColor }}>
             <div className="postcard-content">
               <div className="left-content">
-                <div className="greeting">Hey {recipientName ? `${recipientName},` : ','}</div>
-                <div className="message">{message || ''}</div>
-                <div className="closing">
+                  <div className="greeting" style={{ color: textColor }}>Hey {recipientName ? `${recipientName},` : ','}</div>
+                  <div className="message" style={{ color: textColor }}>{message || ''}</div>
+                  <div className="closing" style={{ color: textColor }}>
                   Sincerely, 
                   {userData?.profileImage ? (
                     <img 
@@ -671,8 +1183,15 @@ const PostCardPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+              {/* Dynamic separator line */}
+              <div 
+                className="separator-line" 
+                style={{ 
+                  backgroundColor: textColor === '#000000' ? 'rgba(170, 170, 170, 0.16)' : 'rgba(255, 255, 255, 0.3)'
+                }}
+              ></div>
               {signature && (
-                <div className="signature-display">
+                <div className="signature-display" style={{ filter: textColor === '#000000' ? 'none' : 'brightness(0) invert(1)' }}>
                   <img src={signature} alt="Signature" className="signature-image" />
                 </div>
               )}
@@ -693,6 +1212,8 @@ const PostCardPage: React.FC = () => {
           </div>
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };

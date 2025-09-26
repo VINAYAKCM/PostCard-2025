@@ -11,6 +11,7 @@ const SetupPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setUserData, emailCheckResult, setEmailCheckResult } = useUser();
   const navigate = useNavigate();
@@ -63,6 +64,18 @@ const SetupPage: React.FC = () => {
     }
   };
 
+  // Device detection
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
   // Debounced email check
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -105,92 +118,183 @@ const SetupPage: React.FC = () => {
 
   return (
     <div className="setup-page">
-      <div className="setup-container">
-        <h1>Personal messages, beautifully<br/> delivered.</h1>
-        <p className="subtitle">Made for meaningful connections.</p>
-        
-        <div className="separator-line"></div>
-        
-        <div className="setup-form">
-          <div className="form-group">
-            <label htmlFor="name">Who's signing this postcard?</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              className="setup-input"
-            />
-          </div>
+      {isMobile ? (
+        // Mobile Layout
+        <div className="mobile-setup-container">
+          <h1 className="mobile-setup-title">Personal messages, beautifully delivered.</h1>
+          <p className="mobile-setup-subtitle">Made for meaningful connections.</p>
+          
+          <div className="mobile-setup-break-line"></div>
+          
+          <div className="mobile-setup-form">
+            <div className="mobile-form-group">
+              <label htmlFor="name">Who's signing this postcard?</label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="mobile-setup-input"
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="from-email">Where should we say this is from?</label>
-            <input
-              type="email"
-              id="from-email"
-              value={fromEmail}
-              onChange={(e) => setFromEmail(e.target.value)}
-              placeholder="Your email address"
-              className="setup-input"
-            />
-            {emailCheckResult && (
-              <div className={`email-status-message ${
-                emailCheckResult.isCreator ? 'vip' : 
-                emailCheckResult.hasUsedPostcard ? 'error' : 'normal'
-              }`}>
-                {emailCheckResult.isCreator && (
-                  <img 
-                    src="/unlock-icon.svg" 
-                    alt="Lock icon" 
-                    className="icon"
-                  />
-                )}
-                <span className="text">{emailCheckResult.message}</span>
-              </div>
-            )}
-            {isCheckingEmail && (
-              <div className="email-status-message normal">
-                <span className="text">Checking email...</span>
-              </div>
-            )}
-            {emailError && (
-              <div className="email-status-message error">
-                <span className="text">{emailError}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="profile-image">Choose a photo — we'll turn it into your stamp</label>
-            <div className="image-upload-area" onClick={() => fileInputRef.current?.click()}>
-              {imagePreview ? (
-                <img src={imagePreview} alt="Profile preview" className="profile-preview" />
-              ) : (
-                <div className="upload-placeholder">
-                  <span>Add a picture</span>
+            <div className="mobile-form-group">
+              <label htmlFor="from-email">Where should we say this is from?</label>
+              <input
+                type="email"
+                id="from-email"
+                value={fromEmail}
+                onChange={(e) => setFromEmail(e.target.value)}
+                placeholder="Your email address"
+                className="mobile-setup-input"
+              />
+              {emailCheckResult && (
+                <div className={`mobile-email-status-message ${
+                  emailCheckResult.isCreator ? 'vip' : 
+                  emailCheckResult.hasUsedPostcard ? 'error' : 'normal'
+                } email-status-animate`}>
+                  {emailCheckResult.isCreator && (
+                    <img 
+                      src="/unlock-icon.svg" 
+                      alt="Lock icon" 
+                      className="icon"
+                    />
+                  )}
+                  <span className="text">{emailCheckResult.message}</span>
+                </div>
+              )}
+              {isCheckingEmail && (
+                <div className="mobile-email-status-message normal">
+                  <span className="text">Checking email...</span>
+                </div>
+              )}
+              {emailError && (
+                <div className="mobile-email-status-message error">
+                  <span className="text">{emailError}</span>
                 </div>
               )}
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              id="profile-image"
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-            />
-          </div>
 
-          <button
-            onClick={handleSetup}
-            disabled={!isFormValid}
-            className={`setup-button ${isFormValid ? 'active' : 'disabled'}`}
-          >
-            Setup
-          </button>
+            <div className="mobile-form-group">
+              <label htmlFor="profile-image">Choose a photo — we'll turn it into your stamp</label>
+              <div className="mobile-image-upload-area" onClick={() => fileInputRef.current?.click()}>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Profile preview" className="mobile-profile-preview" />
+                ) : (
+                  <div className="mobile-upload-placeholder">
+                    <span>Add a picture</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="profile-image"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
+
+            <button
+              onClick={handleSetup}
+              disabled={!isFormValid}
+              className={`mobile-setup-button ${isFormValid ? 'active' : 'disabled'}`}
+            >
+              Next
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        // Desktop Layout
+        <div className="setup-container">
+          <h1>Personal messages, beautifully<br/> delivered.</h1>
+          <p className="subtitle">Made for meaningful connections.</p>
+          
+          <div className="separator-line"></div>
+          
+          <div className="setup-form">
+            <div className="form-group">
+              <label htmlFor="name">Who's signing this postcard?</label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="setup-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="from-email">Where should we say this is from?</label>
+              <input
+                type="email"
+                id="from-email"
+                value={fromEmail}
+                onChange={(e) => setFromEmail(e.target.value)}
+                placeholder="Your email address"
+                className="setup-input"
+              />
+              {emailCheckResult && (
+                <div className={`email-status-message ${
+                  emailCheckResult.isCreator ? 'vip' : 
+                  emailCheckResult.hasUsedPostcard ? 'error' : 'normal'
+                } email-status-animate`}>
+                  {emailCheckResult.isCreator && (
+                    <img 
+                      src="/unlock-icon.svg" 
+                      alt="Lock icon" 
+                      className="icon"
+                    />
+                  )}
+                  <span className="text">{emailCheckResult.message}</span>
+                </div>
+              )}
+              {isCheckingEmail && (
+                <div className="email-status-message normal">
+                  <span className="text">Checking email...</span>
+                </div>
+              )}
+              {emailError && (
+                <div className="email-status-message error">
+                  <span className="text">{emailError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="profile-image">Choose a photo — we'll turn it into your stamp</label>
+              <div className="image-upload-area" onClick={() => fileInputRef.current?.click()}>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Profile preview" className="profile-preview" />
+                ) : (
+                  <div className="upload-placeholder">
+                    <span>Add a picture</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="profile-image"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
+
+            <button
+              onClick={handleSetup}
+              disabled={!isFormValid}
+              className={`setup-button ${isFormValid ? 'active' : 'disabled'}`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

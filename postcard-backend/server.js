@@ -61,13 +61,17 @@ app.get('/', (req, res) => {
       'GET /api/health - Health check',
       'GET /api/db-test - Database test',
       'POST /api/check-email-limit - Check email limits',
-      'POST /api/generate-postcard-satori - Generate postcard (Satori)'
+      'POST /api/generate-postcard-satori - Generate postcard (Satori)',
+      'POST /api/generate-postcard - Generate postcard (Playwright)'
     ]
   });
 });
 
 // Satori postcard generation endpoint
 app.post('/api/generate-postcard-satori', require('./api/generate-postcard-satori'));
+
+// Playwright postcard generation endpoint (for mobile)
+app.post('/api/generate-postcard', require('./api/generate-postcard'));
 
 // Email limit check endpoint
 app.post('/api/check-email-limit', require('./api/check-email-limit'));

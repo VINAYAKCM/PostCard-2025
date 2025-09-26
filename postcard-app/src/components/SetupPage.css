@@ -131,9 +131,7 @@
   position: relative;
 }
 
-.image-upload-area:hover {
-  /* No hover effects */
-}
+/* No hover effects for image upload area */
 
 .upload-placeholder {
   display: flex;
@@ -240,4 +238,278 @@
 
 .email-status-message .text {
   flex-shrink: 0;
+}
+
+/* Mobile Setup Page Styles */
+@media (max-width: 768px) {
+  .setup-page {
+    padding: 0 !important;
+    min-height: 100vh;
+  }
+
+  .mobile-setup-container {
+    background: transparent;
+    padding: 0;
+    max-width: 100%;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mobile-setup-title {
+    text-align: center;
+    color: #1a1a1a;
+    margin: 80px 0 0 0;
+    font-size: 33px;
+    font-weight: 600;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.1;
+    width: 370px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .mobile-setup-subtitle {
+    text-align: center;
+    color: #1a1a1a;
+    margin: 25px 0 0 0;
+    font-size: 18.5px;
+    font-weight: 600;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.4;
+    padding: 0 20px;
+  }
+
+  .mobile-setup-break-line {
+    width: 271px;
+    height: 1px;
+    background-color: rgba(170, 170, 170, 0.6);
+    margin: 25px auto 25px auto;
+  }
+
+  .mobile-setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 0 20px;
+    width: 100%;
+    max-width: 315px;
+  }
+
+  .mobile-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 315px;
+  }
+
+  .mobile-form-group label {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 15px;
+    text-align: left;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .mobile-setup-input {
+    width: 100%;
+    height: 45px;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 16px;
+    color: #1f2937;
+    background: white;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+  }
+
+  .mobile-setup-input:focus {
+    outline: none;
+    border-color: #e5e7eb;
+    background: white;
+  }
+
+  .mobile-setup-input::placeholder {
+    color: #9ca3af;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .mobile-image-upload-area {
+    width: 100%;
+    height: 160px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .mobile-upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #9ca3af;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .mobile-upload-placeholder span {
+    font-weight: 400;
+    font-size: 14px;
+  }
+
+  .mobile-profile-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  .mobile-setup-button {
+    width: 100%;
+    height: 45px;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .mobile-setup-button.disabled {
+    background: black;
+    color: white;
+    cursor: not-allowed;
+    opacity: 1;
+  }
+
+  .mobile-setup-button:hover {
+    background: #374151;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-setup-button.active {
+    background: black;
+    color: white;
+  }
+
+  .mobile-setup-button.active:hover {
+    background: #374151;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Mobile Email Status Message Components */
+  .mobile-email-status-message {
+    margin-top: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mobile-email-status-message.vip {
+    background: linear-gradient(135deg, #C89F25 0%, #FAE9B5 100%);
+    color: #1a1a1a;
+  }
+
+  .mobile-email-status-message.normal {
+    background: linear-gradient(135deg, #D9D9D9 0%, #BFBFBF 100%);
+    color: #1a1a1a;
+  }
+
+  .mobile-email-status-message.error {
+    background: linear-gradient(135deg, #D9D9D9 0%, #BFBFBF 100%);
+    color: #1a1a1a;
+  }
+
+  .mobile-email-status-message .icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .mobile-email-status-message .text {
+    flex-shrink: 0;
+  }
+}
+
+/* Page transition animations */
+.page-transition {
+  width: 100%;
+  height: 100%;
+}
+
+/* Email status message animations */
+.email-status-animate {
+  animation: slideInFade 0.5s ease-out;
+}
+
+@keyframes slideInFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Setup page load animation */
+.setup-container {
+  animation: setupPageLoad 0.8s ease-out;
+}
+
+@keyframes setupPageLoad {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Postcard page load animation */
+.postcard-page {
+  animation: postcardPageLoad 0.8s ease-out;
+}
+
+@keyframes postcardPageLoad {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

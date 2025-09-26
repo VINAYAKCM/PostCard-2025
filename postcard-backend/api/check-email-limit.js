@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
         remaining: 'unlimited',
         isCreator: true,
         hasUsedPostcard: false,
-        message: 'Executive access granted.'
+        message: 'Premium access.'
       });
     }
     
