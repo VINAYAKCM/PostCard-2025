@@ -16,6 +16,7 @@ export const emailConfig = {
 // Email Template Variables:
 // - to_email: Recipient's email address
 // - to_name: Recipient's name
+// - from_email: Sender's email address (for display only)
 // - from_handle: Sender's handle
 // - message: Postcard message
 // - postcard_image: Generated postcard image (base64)
@@ -27,7 +28,7 @@ Subject: {{subject}}
 
 Hello {{to_name}},
 
-You received a beautiful digital postcard from @{{from_handle}}!
+You received a beautiful digital postcard from @{{from_handle}} ({{from_email}})!
 
 Message:
 {{message}}
