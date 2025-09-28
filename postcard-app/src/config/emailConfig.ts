@@ -8,7 +8,7 @@
 
 export const emailConfig = {
   // Your actual EmailJS credentials
-  serviceId: 'service_bmsfwrm',
+  serviceId: 'service_mcuabpd', // Updated to use new postcard Gmail account
   templateId: 'template_cii7st9',
   publicKey: 'RGH-CUU6DYlRogpFv',
 };
