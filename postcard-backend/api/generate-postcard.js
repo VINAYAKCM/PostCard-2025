@@ -150,7 +150,7 @@ const generatePostcard = async (req, res) => {
             left: 50%;
             top: ${isMobile ? '50%' : '39%'};
             transform: translate(-50%, -50%);
-            height: ${isMobile ? '1100px' : '300px'};
+            height: ${isMobile ? '1100px' : '500px'};
             width: 2px;
             z-index: 1;
         }

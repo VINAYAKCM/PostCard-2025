@@ -96,7 +96,7 @@ const PostCardPage: React.FC = () => {
   };
 
   const clearSignature = () => {
-    setSignature(null);
+      setSignature(null);
   };
 
   const handleDownload = async () => {
@@ -186,6 +186,8 @@ const PostCardPage: React.FC = () => {
         const postcardImage = result.postcardImage;
         console.log(`✅ [${isMobile ? 'MOBILE' : 'DESKTOP'}] Postcard generated with Playwright for email`);
       
+      console.log('Image data length:', postcardImage.length);
+      console.log('Image data preview:', postcardImage.substring(0, 100) + '...');
       
       // Send email with postcard attachment
       await sendPostcardEmail(postcardImage);
@@ -202,8 +204,397 @@ const PostCardPage: React.FC = () => {
     }
   };
 
+  // REMOVED: No longer using html2canvas - using Playwright backend for both mobile and desktop
 
+      // Create a temporary container
+      const tempContainer = document.createElement('div');
+      tempContainer.style.cssText = `
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        width: 512px;
+        height: 694px;
+        background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      `;
+      
+      // Clone the elements
+      const frontClone = frontSide.cloneNode(true) as HTMLElement;
+      const backClone = backSide.cloneNode(true) as HTMLElement;
+      
+      // Style the clones
+      frontClone.style.cssText = `
+        width: 100%;
+        height: 347px;
+        background: ${postcardBackgroundColor};
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      `;
+      
+      backClone.style.cssText = `
+        width: 100%;
+        height: 347px;
+        background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      `;
+      
+      // Ensure images have proper object-fit styling (now supported by fixed version)
+      const backImage = backClone.querySelector('.postcard-photo') as HTMLImageElement;
+      if (backImage) {
+        backImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+        `;
+      }
+      
+      // Ensure stamp image has proper object-fit styling
+      const stampImage = frontClone.querySelector('.stamp-preview img') as HTMLImageElement;
+      if (stampImage) {
+        stampImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 8px;
+        `;
+      }
+      
+      // Append to temp container
+      tempContainer.appendChild(frontClone);
+      tempContainer.appendChild(backClone);
+      document.body.appendChild(tempContainer);
+      
+      // Apply dynamic contrast to cloned elements
+      const isLight = isLightBackground(postcardBackgroundColor);
+      const textColor = isLight ? '#000000' : '#FFFFFF';
+      const separatorColor = isLight ? 'rgba(170, 170, 170, 0.16)' : 'rgba(255, 255, 255, 0.3)';
+      
+      // Apply text color to cloned elements
+      const greeting = frontClone.querySelector('.greeting') as HTMLElement;
+      const message = frontClone.querySelector('.message') as HTMLElement;
+      const closing = frontClone.querySelector('.closing') as HTMLElement;
+      const separatorLine = frontClone.querySelector('.separator-line') as HTMLElement;
+      const signatureDisplay = frontClone.querySelector('.signature-display') as HTMLElement;
+      
+      console.log('🔍 [DEBUG] Cloned elements found:', {
+        greeting: !!greeting,
+        message: !!message,
+        closing: !!closing,
+        separatorLine: !!separatorLine,
+        signatureDisplay: !!signatureDisplay,
+        textColor,
+        isLight,
+        backgroundColor: postcardBackgroundColor
+      });
+      
+      if (greeting) greeting.style.color = textColor;
+      if (message) message.style.color = textColor;
+      if (closing) closing.style.color = textColor;
+      if (separatorLine) separatorLine.style.backgroundColor = separatorColor;
+      if (signatureDisplay) {
+        // Apply filter to the signature image, not the container
+        const signatureImage = signatureDisplay.querySelector('.signature-image') as HTMLImageElement;
+        if (signatureImage) {
+          if (textColor !== '#000000') {
+            // Create a canvas to invert the signature image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              canvas.width = signatureImage.naturalWidth || signatureImage.width;
+              canvas.height = signatureImage.naturalHeight || signatureImage.height;
+              
+              // Draw the image
+              ctx.drawImage(signatureImage, 0, 0);
+              
+              // Get image data and invert it
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              
+              for (let i = 0; i < data.length; i += 4) {
+                // Invert RGB values
+                data[i] = 255 - data[i];     // Red
+                data[i + 1] = 255 - data[i + 1]; // Green
+                data[i + 2] = 255 - data[i + 2]; // Blue
+                // Alpha stays the same
+              }
+              
+              // Put the inverted data back
+              ctx.putImageData(imageData, 0, 0);
+              
+              // Replace the image source
+              signatureImage.src = canvas.toDataURL();
+            }
+          }
+          
+          console.log('✅ [DEBUG] Signature IMAGE processed:', {
+            textColor,
+            method: textColor === '#000000' ? 'original' : 'canvas-inverted',
+            element: signatureImage
+          });
+        } else {
+          console.log('❌ [DEBUG] Signature IMAGE not found inside container');
+        }
+      } else {
+        console.log('❌ [DEBUG] Signature element NOT FOUND in cloned elements');
+      }
+      
+      // Wait for images to load
+      const images = tempContainer.querySelectorAll('img');
+      const imagePromises = Array.from(images).map(img => {
+        return new Promise((resolve) => {
+          if (img.complete) {
+            resolve(img);
+          } else {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(img);
+          }
+        });
+      });
+      
+      await Promise.all(imagePromises);
+      
+      // Capture with html2canvas (object-fit fix version)
+      const html2canvas = require('html2canvas-objectfit-fix');
+        const canvas = await html2canvas(tempContainer, {
+          width: 512,
+          height: 694,
+          scale: 6, // Increased for higher quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: postcardBackgroundColor,
+          logging: false
+        });
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log('✅ [DOWNLOAD] Pixel-perfect postcard generated');
+      return dataUrl;
+      
+    } catch (error) {
+      console.error('❌ [DOWNLOAD] Error generating postcard:', error);
+      throw error;
+    }
+  };
 
+  // Helper function to get text width
+  const getTextWidth = (text: string, fontSize: number) => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return 0;
+    
+    context.font = `${fontSize}px SF Pro Display, -apple-system, BlinkMacSystemFont, Arial, sans-serif`;
+    return context.measureText(text).width;
+  };
+
+  const generateEmailFriendlyImage = async (): Promise<string> => {
+    console.log('🚀 [EMAIL] Generating pixel-perfect email postcard...');
+    
+    try {
+      // Get the preview elements
+      const frontSide = document.querySelector('.front-side') as HTMLElement;
+      const backSide = document.querySelector('.back-side') as HTMLElement;
+      
+      if (!frontSide || !backSide) {
+        throw new Error('Preview elements not found');
+      }
+
+      // Create a temporary container
+      const tempContainer = document.createElement('div');
+      tempContainer.style.cssText = `
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+              width: 512px;
+              height: 694px;
+              background: ${postcardBackgroundColor};
+        border-radius: 0px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+              overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      `;
+      
+      // Clone the elements
+      const frontClone = frontSide.cloneNode(true) as HTMLElement;
+      const backClone = backSide.cloneNode(true) as HTMLElement;
+      
+      // Style the clones
+      frontClone.style.cssText = `
+              width: 100%;
+              height: 347px;
+              background: ${postcardBackgroundColor};
+        border-radius: 20px 20px 0 0;
+              margin: 0;
+              padding: 0;
+        position: relative;
+      `;
+      
+      backClone.style.cssText = `
+              width: 100%;
+              height: 347px;
+              background: ${postcardBackgroundColor};
+        border-radius: 0px;
+              margin: 0;
+              padding: 0;
+        position: relative;
+      `;
+      
+      // Ensure images have proper object-fit styling (now supported by fixed version)
+      const backImage = backClone.querySelector('.postcard-photo') as HTMLImageElement;
+      if (backImage) {
+        backImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+        `;
+      }
+      
+      // Ensure stamp image has proper object-fit styling
+      const stampImage = frontClone.querySelector('.stamp-preview img') as HTMLImageElement;
+      if (stampImage) {
+        stampImage.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 8px;
+        `;
+      }
+      
+      // Append to temp container
+      tempContainer.appendChild(frontClone);
+      tempContainer.appendChild(backClone);
+      document.body.appendChild(tempContainer);
+      
+      // Apply dynamic contrast to cloned elements
+      const isLight = isLightBackground(postcardBackgroundColor);
+      const textColor = isLight ? '#000000' : '#FFFFFF';
+      const separatorColor = isLight ? 'rgba(170, 170, 170, 0.16)' : 'rgba(255, 255, 255, 0.3)';
+      
+      // Apply text color to cloned elements
+      const greeting = frontClone.querySelector('.greeting') as HTMLElement;
+      const message = frontClone.querySelector('.message') as HTMLElement;
+      const closing = frontClone.querySelector('.closing') as HTMLElement;
+      const separatorLine = frontClone.querySelector('.separator-line') as HTMLElement;
+      const signatureDisplay = frontClone.querySelector('.signature-display') as HTMLElement;
+      
+      console.log('🔍 [DEBUG] Cloned elements found:', {
+        greeting: !!greeting,
+        message: !!message,
+        closing: !!closing,
+        separatorLine: !!separatorLine,
+        signatureDisplay: !!signatureDisplay,
+        textColor,
+        isLight,
+        backgroundColor: postcardBackgroundColor
+      });
+      
+      if (greeting) greeting.style.color = textColor;
+      if (message) message.style.color = textColor;
+      if (closing) closing.style.color = textColor;
+      if (separatorLine) separatorLine.style.backgroundColor = separatorColor;
+      if (signatureDisplay) {
+        // Apply filter to the signature image, not the container
+        const signatureImage = signatureDisplay.querySelector('.signature-image') as HTMLImageElement;
+        if (signatureImage) {
+          if (textColor !== '#000000') {
+            // Create a canvas to invert the signature image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              canvas.width = signatureImage.naturalWidth || signatureImage.width;
+              canvas.height = signatureImage.naturalHeight || signatureImage.height;
+              
+              // Draw the image
+              ctx.drawImage(signatureImage, 0, 0);
+              
+              // Get image data and invert it
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              
+              for (let i = 0; i < data.length; i += 4) {
+                // Invert RGB values
+                data[i] = 255 - data[i];     // Red
+                data[i + 1] = 255 - data[i + 1]; // Green
+                data[i + 2] = 255 - data[i + 2]; // Blue
+                // Alpha stays the same
+              }
+              
+              // Put the inverted data back
+              ctx.putImageData(imageData, 0, 0);
+              
+              // Replace the image source
+              signatureImage.src = canvas.toDataURL();
+            }
+          }
+          
+          console.log('✅ [DEBUG] Signature IMAGE processed:', {
+            textColor,
+            method: textColor === '#000000' ? 'original' : 'canvas-inverted',
+            element: signatureImage
+          });
+        } else {
+          console.log('❌ [DEBUG] Signature IMAGE not found inside container');
+        }
+      } else {
+        console.log('❌ [DEBUG] Signature element NOT FOUND in cloned elements');
+      }
+      
+      // Wait for images to load
+      const images = tempContainer.querySelectorAll('img');
+      const imagePromises = Array.from(images).map(img => {
+        return new Promise((resolve) => {
+          if (img.complete) {
+            resolve(img);
+          } else {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(img);
+          }
+        });
+      });
+      
+      await Promise.all(imagePromises);
+      
+      // Capture with html2canvas (object-fit fix version)
+      const html2canvas = require('html2canvas-objectfit-fix');
+        const canvas = await html2canvas(tempContainer, {
+          width: 512,
+          height: 694,
+          scale: 4, // Increased for higher quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: postcardBackgroundColor,
+          logging: false
+        });
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('✅ [EMAIL] Pixel-perfect email postcard generated');
+      return dataUrl;
+      
+    } catch (error) {
+      console.error('❌ [EMAIL] Error generating email postcard:', error);
+      throw error;
+    }
+  };
+
+  // HTML2Canvas captures the exact preview - perfect quality guaranteed!
 
   const sendPostcardEmail = async (postcardImage: string): Promise<void> => {
     try {
@@ -292,17 +683,33 @@ const PostCardPage: React.FC = () => {
         subject: `Digital Postcard from @${userData.handle}`
       };
 
+      console.log('🔍 DEBUG: Template parameters being sent to EmailJS:');
+      console.log('  - to_email:', templateParams.to_email);
+      console.log('  - to_name:', templateParams.to_name);
+      console.log('  - from_email:', templateParams.from_email);
+      console.log('  - from_handle:', templateParams.from_handle);
+      console.log('  - message:', templateParams.message);
+      console.log('  - postcard_image:', templateParams.postcard_image);
+      console.log('  - subject:', templateParams.subject);
+      console.log('🔍 Full templateParams object:', templateParams);
 
-      await emailjs.send(
+      const result = await emailjs.send(
         emailConfig.serviceId,
         emailConfig.templateId,
         templateParams,
         emailConfig.publicKey
       );
 
+      console.log('EmailJS result:', result);
+      console.log('Email sent with Cloudinary link:', imageUrl);
     } catch (error) {
       console.error('Failed to send email:', error);
       
+      // More detailed error logging
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       
       alert('Failed to send email. Please check console for details.');
     }
