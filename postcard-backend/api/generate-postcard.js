@@ -148,9 +148,9 @@ const generatePostcard = async (req, res) => {
         .separator-line {
             position: absolute;
             left: 50%;
-            top: ${isMobile ? '50%' : '39%'};
+            top: ${isMobile ? '50%' : '50%'};
             transform: translate(-50%, -50%);
-            height: ${isMobile ? '1100px' : '500px'};
+            height: ${isMobile ? '1100px' : '1100px'};
             width: 2px;
             z-index: 1;
         }
