@@ -207,8 +207,12 @@ const PostCardPage: React.FC = () => {
 
   const sendPostcardEmail = async (postcardImage: string): Promise<void> => {
     try {
+      console.log('🔍 [EMAIL] Starting email send process...');
+      console.log('🔍 [EMAIL] Cloudinary config:', cloudinaryConfig);
+      
       // Check if Cloudinary is configured
       if (cloudinaryConfig.cloudName === 'YOUR_CLOUDINARY_CLOUD_NAME') {
+        console.error('❌ [EMAIL] Cloudinary not configured!');
         alert('Please configure Cloudinary first. Check the cloudinaryConfig.ts file for setup instructions.');
         return;
       }
@@ -245,15 +249,18 @@ const PostCardPage: React.FC = () => {
       formData.append('file', blob, 'postcard.jpg');
       formData.append('upload_preset', cloudinaryConfig.uploadPreset);
       
+      console.log('🔍 [EMAIL] Uploading to Cloudinary...');
       const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
         method: 'POST',
         body: formData,
       });
       
+      console.log('🔍 [EMAIL] Cloudinary response status:', uploadResponse.status);
+      
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
-        console.error('Cloudinary upload failed:', uploadResponse.status, errorText);
-        throw new Error(`Failed to upload image to Cloudinary: ${uploadResponse.status}`);
+        console.error('❌ [EMAIL] Cloudinary upload failed:', uploadResponse.status, errorText);
+        throw new Error(`Failed to upload image to Cloudinary: ${uploadResponse.status} - ${errorText}`);
       }
       
       const uploadResult = await uploadResponse.json();
@@ -275,8 +282,13 @@ const PostCardPage: React.FC = () => {
 
   const sendSimpleEmail = async (imageUrl: string): Promise<void> => {
     try {
+      console.log('🔍 [EMAIL] Starting EmailJS send...');
+      console.log('🔍 [EMAIL] Image URL:', imageUrl);
+      console.log('🔍 [EMAIL] User data:', userData);
+      
       // Ensure name and handle are available from context
       if (!userData?.name || !userData?.handle) {
+        console.error('❌ [EMAIL] Missing user data:', userData);
         alert('Sender name or handle is missing. Please complete setup.');
         return;
       }
