@@ -1,5 +1,58 @@
 const { chromium } = require('playwright');
 
+// Browser Pool for massive performance boost
+class BrowserPool {
+  constructor() {
+    this.browser = null;
+    this.isLaunching = false;
+  }
+  
+  async getBrowser() {
+    if (!this.browser && !this.isLaunching) {
+      this.isLaunching = true;
+      console.log('🚀 [BROWSER] Launching new browser instance...');
+      const startTime = Date.now();
+      
+      this.browser = await chromium.launch({
+        headless: true,
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding'
+        ]
+      });
+      
+      const launchTime = Date.now() - startTime;
+      console.log('✅ [BROWSER] Browser launched in:', launchTime + 'ms');
+      this.isLaunching = false;
+    } else if (this.browser && this.browser.isConnected()) {
+      console.log('♻️ [BROWSER] Reusing existing browser (INSTANT!)');
+    } else {
+      // Wait for browser to finish launching
+      while (this.isLaunching) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    return this.browser;
+  }
+  
+  async close() {
+    if (this.browser && this.browser.isConnected()) {
+      await this.browser.close();
+      this.browser = null;
+    }
+  }
+}
+
+// Global browser pool instance
+const browserPool = new BrowserPool();
+
 // Utility function to determine if a background color is light or dark
 const isLightBackground = (hexColor) => {
   // Remove # if present
@@ -18,8 +71,10 @@ const isLightBackground = (hexColor) => {
 };
 
 const generatePostcard = async (req, res) => {
+  const startTime = Date.now();
   try {
     console.log('🎭 [PLAYWRIGHT] Starting postcard generation...');
+    console.log('⏱️ [TIMING] Request started at:', new Date().toISOString());
     
     const {
       recipientName,
@@ -58,16 +113,20 @@ const generatePostcard = async (req, res) => {
       isMobile
     });
 
-    // Launch browser
-    const browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
+    // Get browser from pool (MASSIVE SPEED BOOST!)
+    const browserStartTime = Date.now();
+    console.log('⏱️ [TIMING] Getting browser from pool...');
+    const browser = await browserPool.getBrowser();
+    const browserTime = Date.now() - browserStartTime;
+    console.log('⏱️ [TIMING] Browser get took:', browserTime + 'ms');
     
-    // Set viewport to maximum resolution for ultra-crisp quality
-    await page.setViewportSize({ width: 4096, height: 5552, deviceScaleFactor: 3 });
+    const pageStartTime = Date.now();
+    const page = await browser.newPage();
+    const pageTime = Date.now() - pageStartTime;
+    console.log('⏱️ [TIMING] Page creation took:', pageTime + 'ms');
+    
+    // Set optimized viewport for speed while maintaining quality
+    await page.setViewportSize({ width: 2048, height: 2776, deviceScaleFactor: 2 });
 
     // Generate HTML template
     const htmlTemplate = `
@@ -378,25 +437,47 @@ const generatePostcard = async (req, res) => {
 </html>`;
 
     // Set HTML content
+    const contentStartTime = Date.now();
     await page.setContent(htmlTemplate);
+    const contentTime = Date.now() - contentStartTime;
+    console.log('⏱️ [TIMING] HTML content set in:', contentTime + 'ms');
     
-    // Wait for images to load
-    await page.waitForLoadState('networkidle');
+    // Wait for images to load (optimized for speed)
+    const waitStartTime = Date.now();
+    await page.waitForSelector('.postcard-container', { timeout: 10000 });
+    await page.waitForTimeout(1000); // Give images time to render
+    const waitTime = Date.now() - waitStartTime;
+    console.log('⏱️ [TIMING] Wait for images took:', waitTime + 'ms');
     
     // Take screenshot of the postcard container
+    const screenshotStartTime = Date.now();
     const postcardElement = await page.$('.postcard-container');
     const screenshot = await postcardElement.screenshot({
       type: 'png'
     });
+    const screenshotTime = Date.now() - screenshotStartTime;
+    console.log('⏱️ [TIMING] Screenshot took:', screenshotTime + 'ms');
 
-    // Close browser
-    await browser.close();
+    // Keep browser alive for reuse (MASSIVE SPEED BOOST!)
+    console.log('♻️ [BROWSER] Keeping browser alive for next request');
 
     // Convert to base64
+    const base64StartTime = Date.now();
     const base64Image = screenshot.toString('base64');
     const dataUrl = `data:image/png;base64,${base64Image}`;
+    const base64Time = Date.now() - base64StartTime;
+    console.log('⏱️ [TIMING] Base64 conversion took:', base64Time + 'ms');
 
+    const totalTime = Date.now() - startTime;
     console.log('✅ [PLAYWRIGHT] Postcard generated successfully');
+    console.log('⏱️ [TIMING] TOTAL TIME:', totalTime + 'ms');
+    console.log('📊 [TIMING] Breakdown:');
+    console.log('  - Browser get:', browserTime + 'ms');
+    console.log('  - Page creation:', pageTime + 'ms');
+    console.log('  - HTML content:', contentTime + 'ms');
+    console.log('  - Wait for images:', waitTime + 'ms');
+    console.log('  - Screenshot:', screenshotTime + 'ms');
+    console.log('  - Base64 conversion:', base64Time + 'ms');
     
     res.json({ 
       success: true, 
@@ -413,5 +494,18 @@ const generatePostcard = async (req, res) => {
     });
   }
 };
+
+// Graceful cleanup on server shutdown
+process.on('SIGINT', async () => {
+  console.log('🧹 [BROWSER] Gracefully closing browser pool...');
+  await browserPool.close();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🧹 [BROWSER] Gracefully closing browser pool...');
+  await browserPool.close();
+  process.exit(0);
+});
 
 module.exports = generatePostcard;
