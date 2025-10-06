@@ -88,6 +88,9 @@ const generatePostcard = async (req, res) => {
       isMobile = false
     } = req.body;
 
+    // Extract stamp image from userData (profileImage)
+    const stampImage = userData?.profileImage || null;
+
     console.log('📝 [PLAYWRIGHT] Data received:', {
       recipientName: recipientName ? '✓' : '✗',
       handle: handle ? '✓' : '✗',
@@ -136,6 +139,9 @@ const generatePostcard = async (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postcard Generation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -144,7 +150,7 @@ const generatePostcard = async (req, res) => {
         }
         
         body {
-            font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
             background: #f0f0f0;
             padding: 20px;
         }
@@ -230,7 +236,7 @@ const generatePostcard = async (req, res) => {
             color: ${textColor};
             margin-top: 120px;
             margin-left: 100px;
-            font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
         }
         
         .message {
@@ -247,7 +253,7 @@ const generatePostcard = async (req, res) => {
             box-sizing: border-box;
             margin-top: 60px;
             margin-left: 100px;
-            font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
         }
         
         .closing {
@@ -257,7 +263,7 @@ const generatePostcard = async (req, res) => {
             bottom: 120px;
             left: 100px;
             margin: 0;
-            font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
         }
         
         .closing-profile-image {
@@ -345,7 +351,7 @@ const generatePostcard = async (req, res) => {
             position: absolute !important;
             bottom: 80px !important;
             left: calc(50% + 60px) !important;
-            font-family: 'SF Pro Display', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
             display: flex !important;
             align-items: center !important;
             gap: 20px !important;
@@ -407,8 +413,8 @@ const generatePostcard = async (req, res) => {
             </div>
             <div class="stamp-placeholder">
                 <div class="stamp-preview">
-                    ${photo ? 
-                        `<img src="${photo}" alt="Stamp" class="stamp-image" />` : 
+                    ${stampImage ? 
+                        `<img src="${stampImage}" alt="Stamp" class="stamp-image" />` : 
                         '<div class="stamp-placeholder-text">Add a picture</div>'
                     }
                 </div>
