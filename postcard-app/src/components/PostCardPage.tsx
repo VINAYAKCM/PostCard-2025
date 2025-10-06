@@ -38,6 +38,7 @@ const PostCardPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [textColor, setTextColor] = useState('#000000'); // Dynamic text color based on background
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +106,7 @@ const PostCardPage: React.FC = () => {
       return;
     }
 
+    setIsDownloading(true);
     try {
       // Use backend Playwright generation for both mobile and desktop
       console.log(`🎭 [${isMobile ? 'MOBILE' : 'DESKTOP'}] Using backend Playwright generation...`);
@@ -146,6 +148,8 @@ const PostCardPage: React.FC = () => {
     } catch (error) {
       console.error('Error generating postcard:', error);
       alert('Failed to generate postcard. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -330,11 +334,15 @@ const PostCardPage: React.FC = () => {
           {/* Download button in top right corner */}
           <button
             onClick={handleDownload}
-            disabled={!isFormValid || !isSent}
+            disabled={!isFormValid || !isSent || isDownloading}
             className="download-icon-button mobile"
             title="Download Preview"
           >
-            <img src="/download-icon.svg" alt="Download" />
+            {isDownloading ? (
+              <div className="spinner"></div>
+            ) : (
+              <img src="/download-icon.svg" alt="Download" />
+            )}
           </button>
           
           {/* Title */}
@@ -562,11 +570,15 @@ const PostCardPage: React.FC = () => {
           {/* Download button in top right corner */}
           <button
             onClick={handleDownload}
-            disabled={!isFormValid || !isSent}
+            disabled={!isFormValid || !isSent || isDownloading}
             className="download-icon-button"
             title="Download Preview"
           >
-            <img src="/download-icon.svg" alt="Download" />
+            {isDownloading ? (
+              <div className="spinner"></div>
+            ) : (
+              <img src="/download-icon.svg" alt="Download" />
+            )}
           </button>
           
       <div className="postcard-container">
