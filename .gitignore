@@ -78,3 +78,8 @@ jspm_packages/
 # DynamoDB Local files
 .dynamodb/
 .vercel
+
+# Test images and development artifacts
+test-*.png
+test-*.jpg
+test-*.jpeg

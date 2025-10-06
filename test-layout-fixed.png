@@ -1,1 +1,0 @@
-{"error":"Failed to generate postcard image","details":"Expected <div> to have explicit \"display: flex\", \"display: contents\", or \"display: none\" if it has more than one child node."}
