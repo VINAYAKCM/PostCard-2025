@@ -1055,13 +1055,17 @@ input[type="color"] {
 }
 
 /* Download spinner */
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.download-icon-button .spinner {
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid #e5e7eb !important;
+  border-top: 2px solid #3b82f6 !important;
+  border-radius: 50% !important;
+  animation: spin 0.8s linear infinite !important;
+  display: inline-block !important;
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 @keyframes spin {
