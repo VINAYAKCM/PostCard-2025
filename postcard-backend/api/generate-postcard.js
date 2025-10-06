@@ -241,7 +241,7 @@ const generatePostcard = async (req, res) => {
         
         .message {
             flex: 1;
-            font-size: 4rem;
+            font-size: 2.5rem;
             line-height: 1.6;
             color: ${textColor};
             word-wrap: break-word;
